@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>НЕЙРО АРТЕЛЬ — 13 уровней Claude</title>
+
+<!-- ═══════════════════════════════════════════════════
+     FIREBASE — замени YOUR_* на значения из Firebase Console
+     console.firebase.google.com → Project Settings → Web App
+     ═══════════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+           createUserWithEmailAndPassword, sendEmailVerification,
+           sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup,
+           signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp }
+           from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  // ──── ВСТАВЬ СЮДА СВОЙ КОНФИГ ────
+  const firebaseConfig = {
+    apiKey:            "YOUR_API_KEY",
+    authDomain:        "YOUR_PROJECT.firebaseapp.com",
+    projectId:         "YOUR_PROJECT_ID",
+    storageBucket:     "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId:             "YOUR_APP_ID"
+  };
+  // ─────────────────────────────────
+
+  const FIREBASE_CONFIGURED = !firebaseConfig.apiKey.startsWith('YOUR_');
+
+  let app, auth, db, googleProvider;
+  if (FIREBASE_CONFIGURED) {
+    app          = initializeApp(firebaseConfig);
+    auth         = getAuth(app);
+    db           = getFirestore(app);
+    googleProvider = new GoogleAuthProvider();
+  }
+
+  // ── Expose to global scope ──
+  window.__fb = { auth, db, googleProvider,
+    signInWithEmailAndPassword, createUserWithEmailAndPassword,
+    sendEmailVerification, sendPasswordResetEmail,
+    signInWithPopup, signOut, onAuthStateChanged,
+    doc, getDoc, setDoc, updateDoc, serverTimestamp,
+    CONFIGURED: FIREBASE_CONFIGURED
+  };
+
+  // ── Auth state gate ──
+  if (FIREBASE_CONFIGURED) {
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        window.__currentUser = user;
+        hideAuthScreen();
+        loadUserData(user.uid).then(() => {
+          renderApp();
+          renderUserProfile(user);
+        });
+      } else {
+        window.__currentUser = null;
+        showAuthScreen();
+      }
+    });
+  } else {
+    // Firebase не настроен — работаем через localStorage
+    window.__currentUser = null;
+    document.addEventListener('DOMContentLoaded', () => {
+      showFirebaseSetupBanner();
+      renderApp();
+    });
+  }
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
+:root {
+  --bg: #09090f;
+  --surface: #111119;
+  --surface2: #16161f;
+  --border: #1e1e2e;
+  --border2: #2a2a3e;
+  --accent: #e8590a;
+  --accent2: #ff8c42;
+  --text: #e8e8f0;
+  --muted: #6b6b8a;
+  --muted2: #9898b8;
+  --green: #3ecf8e;
+  --blue: #4f8ef7;
+  --purple: #a78bfa;
+  --yellow: #fbbf24;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Syne', sans-serif;
+  min-height: 100vh;
+  display: flex;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 260px;
+  min-height: 100vh;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  overflow-y: auto;
+  z-index: 50;
+  transition: transform 0.3s;
+}
+
+.sidebar-logo {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Social links in sidebar */
+.sidebar-social {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.65rem;
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted2);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  transition: all 0.18s;
+  letter-spacing: 0.02em;
+}
+
+.social-link:hover {
+  color: var(--text);
+  background: var(--surface2);
+  border-color: var(--border2);
+}
+
+.social-link.tg:hover { color: #4db6e8; border-color: rgba(77,182,232,0.25); }
+.social-link.author:hover { color: var(--accent2); border-color: rgba(255,140,66,0.25); }
+
+.social-link-icon {
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* Footer bar */
+.app-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  margin-top: 2rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  max-width: 860px;
+}
+
+.footer-mentor-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1.25rem;
+  background: rgba(232,89,10,0.08);
+  border: 1px solid rgba(232,89,10,0.28);
+  color: var(--accent2);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  letter-spacing: 0.02em;
+  width: fit-content;
+}
+
+.footer-mentor-link:hover {
+  background: rgba(232,89,10,0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.footer-mentor-link .fml-icon { font-size: 1rem; }
+
+.footer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.footer-social-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.footer-social-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  transition: all 0.18s;
+  border-radius: 2px;
+}
+
+.footer-social-chip:hover { color: var(--text); border-color: var(--muted); }
+.footer-social-chip.tg:hover { color: #4db6e8; border-color: rgba(77,182,232,0.3); }
+.footer-social-chip.author:hover { color: var(--accent2); border-color: rgba(255,140,66,0.3); }
+
+.footer-copy {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  line-height: 1.5;
+  text-align: right;
+}
+
+.logo-mark {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+
+.logo-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* Progress summary */
+.sidebar-progress {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.progress-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.progress-bar {
+  height: 3px;
+  background: var(--border2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+/* Track sections */
+.sidebar-section {
+  padding: 0.75rem 1.25rem 0.25rem;
+}
+
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.level-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.level-nav-item:hover { background: var(--surface2); color: var(--text); }
+.level-nav-item.active { background: rgba(232,89,10,0.1); color: var(--text); }
+.level-nav-item.active .nav-num { color: var(--accent); }
+
+.nav-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  min-width: 1.5rem;
+  color: var(--muted);
+}
+
+.nav-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--border2);
+  margin-left: auto;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.nav-dot.done { background: var(--green); }
+.nav-dot.in-progress { background: var(--accent); }
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.api-key-btn {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  background: rgba(232,89,10,0.08);
+  border: 1px solid rgba(232,89,10,0.25);
+  color: var(--accent2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.api-key-btn:hover { background: rgba(232,89,10,0.15); }
+.api-key-btn.set { border-color: rgba(62,207,142,0.3); color: var(--green); background: rgba(62,207,142,0.08); }
+
+/* ── Main ── */
+.main {
+  margin-left: 260px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Views ── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── DASHBOARD ─── */
+#view-dashboard {
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.dashboard-hero {
+  margin-bottom: 2.5rem;
+  padding: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-hero::after {
+  content: 'CLAUDE';
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 6rem;
+  font-weight: 800;
+  color: rgba(232,89,10,0.04);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.hero-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--accent);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+}
+
+.hero-title {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 0.5rem;
+}
+
+.hero-title span { color: var(--accent); }
+
+.hero-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.hstat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hstat-val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hstat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Level cards grid */
+.levels-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.track-group {
+  margin-bottom: 1.5rem;
+}
+
+.track-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.track-heading h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted2);
+}
+
+.track-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+.level-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.level-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--border2);
+  transition: background 0.2s;
+}
+
+.level-card:hover { border-color: var(--border2); }
+.level-card:hover::before { background: var(--muted); }
+.level-card.done::before { background: var(--green); }
+.level-card.in-progress::before { background: var(--accent); }
+.level-card.done { opacity: 0.75; }
+
+.level-num-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  padding: 0.3rem 0.5rem;
+  min-width: 2.5rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.level-info { flex: 1; }
+
+.level-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.level-card-meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 0.15rem 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: 2px;
+}
+
+.pill-green { background: rgba(62,207,142,0.1); color: var(--green); border: 1px solid rgba(62,207,142,0.25); }
+.pill-blue  { background: rgba(79,142,247,0.1); color: var(--blue);  border: 1px solid rgba(79,142,247,0.25); }
+.pill-purple{ background: rgba(167,139,250,0.1);color: var(--purple);border: 1px solid rgba(167,139,250,0.25); }
+
+.level-duration {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.card-status {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+/* ─── LEVEL VIEW ─── */
+#view-level {
+  padding: 2rem;
+  max-width: 900px;
+}
+
+.level-breadcrumb {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bc-link {
+  cursor: pointer;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.bc-link:hover { text-decoration: underline; }
+
+.level-header {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+}
+
+.level-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.level-header h1 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.complete-btn {
+  padding: 0.6rem 1.2rem;
+  background: rgba(62,207,142,0.1);
+  border: 1px solid rgba(62,207,142,0.3);
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.complete-btn:hover { background: rgba(62,207,142,0.2); }
+.complete-btn.done { background: rgba(62,207,142,0.15); border-color: var(--green); }
+
+.level-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2rem;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Topics section */
+.topics-section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(232,89,10,0.2);
+}
+
+.topics-list {
+  list-style: none;
+  display: grid;
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.topics-list li {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--muted2);
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+
+.topics-list li:last-child { border-bottom: none; }
+
+.topics-list li::before {
+  content: '';
+  width: 4px; height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Practice block */
+.practice-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.practice-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.practice-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.practice-meta { flex: 1; }
+
+.practice-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+.practice-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.practice-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.65;
+  margin-bottom: 1rem;
+}
+
+.steps-list {
+  list-style: none;
+  counter-reset: s;
+  display: grid;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.steps-list li {
+  counter-increment: s;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.steps-list li::before {
+  content: counter(s);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 700;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.outcome-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(62,207,142,0.08);
+  border: 1px solid rgba(62,207,142,0.2);
+  color: var(--green);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  padding: 0.35rem 0.75rem;
+}
+
+/* Practice workspace */
+.workspace {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.workspace-header {
+  padding: 0.75rem 1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ws-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.ws-status {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.ws-status.connected { color: var(--green); background: rgba(62,207,142,0.1); border: 1px solid rgba(62,207,142,0.2); }
+.ws-status.offline { color: var(--muted); background: var(--surface); border: 1px solid var(--border2); }
+
+.workspace-body {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 300px;
+}
+
+.ws-messages {
+  padding: 1rem;
+  max-height: 350px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+
+.ws-msg {
+  padding: 0.75rem 1rem;
+  border-radius: 2px;
+  line-height: 1.6;
+  max-width: 85%;
+}
+
+.ws-msg.user {
+  background: rgba(232,89,10,0.1);
+  border: 1px solid rgba(232,89,10,0.2);
+  color: var(--text);
+  align-self: flex-end;
+}
+
+.ws-msg.assistant {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  align-self: flex-start;
+  white-space: pre-wrap;
+}
+
+.ws-msg.system {
+  background: none;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: center;
+  align-self: center;
+  border: none;
+  padding: 0.25rem 0;
+}
+
+.ws-msg.thinking {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  align-self: flex-start;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.dot-anim span {
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--muted);
+  border-radius: 50%;
+  animation: bounce 1.4s infinite;
+}
+
+.dot-anim span:nth-child(2) { animation-delay: 0.2s; }
+.dot-anim span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+.ws-input-row {
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 0;
+}
+
+.ws-input {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0.75rem 1rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  resize: none;
+  outline: none;
+  line-height: 1.5;
+  min-height: 60px;
+}
+
+.ws-input::placeholder { color: var(--muted); }
+
+.ws-send-btn {
+  padding: 0.75rem 1.25rem;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 600;
+  align-self: flex-end;
+  margin-bottom: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.ws-send-btn:hover { background: var(--accent2); }
+.ws-send-btn:disabled { background: var(--border2); cursor: not-allowed; }
+
+.ws-no-key {
+  padding: 2rem;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.ws-no-key a {
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Notes tab */
+.notes-area {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  width: 100%;
+  min-height: 280px;
+  padding: 1rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  resize: vertical;
+  outline: none;
+  line-height: 1.7;
+  border-radius: 0;
+}
+
+.notes-area::placeholder { color: var(--muted); }
+
+.notes-save-btn {
+  margin-top: 0.75rem;
+  padding: 0.5rem 1.2rem;
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.3);
+  color: var(--blue);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.notes-save-btn:hover { background: rgba(79,142,247,0.2); }
+
+.notes-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--green);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.notes-saved.show { opacity: 1; }
+
+/* Navigation buttons */
+.level-nav-btns {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.nav-btn {
+  padding: 0.6rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nav-btn:hover { border-color: var(--muted); color: var(--text); }
+.nav-btn.next { background: rgba(232,89,10,0.1); border-color: rgba(232,89,10,0.3); color: var(--accent2); }
+.nav-btn.next:hover { background: rgba(232,89,10,0.2); }
+.nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ─── API KEY MODAL ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 200;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 2rem;
+  max-width: 460px;
+  width: 100%;
+}
+
+.modal-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.modal-desc {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.modal-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  padding: 0.7rem 0.9rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  outline: none;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s;
+}
+
+.modal-input:focus { border-color: var(--accent); }
+
+.modal-btns {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.modal-btn {
+  padding: 0.55rem 1.2rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.2s;
+}
+
+.modal-btn.cancel { background: none; border: 1px solid var(--border2); color: var(--muted); }
+.modal-btn.cancel:hover { border-color: var(--muted); color: var(--text); }
+.modal-btn.confirm { background: var(--accent); border: 1px solid var(--accent); color: #fff; }
+.modal-btn.confirm:hover { background: var(--accent2); }
+
+/* ─── ACHIEVEMENTS ─── */
+.achievements-section {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.achiev-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.achiev-card {
+  padding: 1rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.achiev-card.earned {
+  border-color: rgba(251,191,36,0.3);
+  background: rgba(251,191,36,0.05);
+}
+
+.achiev-icon { font-size: 1.5rem; margin-bottom: 0.4rem; filter: grayscale(1); }
+.achiev-card.earned .achiev-icon { filter: none; }
+
+.achiev-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.achiev-card.earned .achiev-name { color: var(--yellow); }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--green);
+  padding: 0.75rem 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--green);
+  z-index: 300;
+  transform: translateY(100px);
+  opacity: 0;
+  transition: all 0.3s;
+  max-width: 300px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* Code style */
+code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  color: var(--accent2);
+  background: rgba(232,89,10,0.08);
+  padding: 0.1em 0.3em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .main { margin-left: 0; }
+  #view-dashboard, #view-level { padding: 1.25rem; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.view.active { animation: fadeUp 0.25s ease; }
+
+/* ─── AUTH SCREEN ─── */
+#auth-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+#auth-screen.show { display: flex; }
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-top: 3px solid var(--accent);
+  padding: 2rem;
+  animation: fadeUp 0.3s ease;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 1.75rem;
+}
+
+.auth-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.3rem;
+}
+
+.auth-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.auth-title span { color: var(--accent); }
+
+.auth-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 0.35rem;
+}
+
+.auth-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.5rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.6rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+}
+
+.auth-tab:hover { color: var(--text); }
+.auth-tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+.auth-field {
+  margin-bottom: 0.85rem;
+}
+
+.auth-label {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.35rem;
+}
+
+.auth-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border2);
+  padding: 0.65rem 0.9rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.18s;
+  border-radius: 2px;
+}
+
+.auth-input:focus { border-color: var(--accent); }
+
+.auth-submit {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.auth-submit:hover { background: var(--accent2); }
+.auth-submit:disabled { background: var(--border2); cursor: not-allowed; }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.auth-google-btn {
+  width: 100%;
+  padding: 0.65rem;
+  background: none;
+  border: 1px solid var(--border2);
+  color: var(--muted2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+}
+
+.auth-google-btn:hover { border-color: var(--muted); color: var(--text); }
+
+.auth-error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.25);
+  color: #f87171;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.85rem;
+  display: none;
+  line-height: 1.5;
+}
+
+.auth-error.show { display: block; }
+
+.auth-info {
+  background: rgba(79,142,247,0.08);
+  border: 1px solid rgba(79,142,247,0.2);
+  color: var(--blue);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.85rem;
+  display: none;
+  line-height: 1.5;
+}
+
+.auth-info.show { display: block; }
+
+.auth-reset-link {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 0.75rem;
+  cursor: pointer;
+}
+
+.auth-reset-link:hover { color: var(--accent); }
+
+/* User profile chip in sidebar */
+.sidebar-user {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  display: none;
+}
+
+.sidebar-user.show { display: flex; align-items: center; gap: 0.65rem; }
+
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.user-info { flex: 1; min-width: 0; }
+
+.user-email {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-status {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--green);
+  margin-top: 0.1rem;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.2rem;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.logout-btn:hover { color: #f87171; }
+
+/* Firebase setup banner */
+.setup-banner {
+  display: none;
+  background: rgba(251,191,36,0.08);
+  border-bottom: 1px solid rgba(251,191,36,0.25);
+  padding: 0.6rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--yellow);
+  line-height: 1.5;
+}
+
+.setup-banner.show { display: block; }
+.setup-banner a { color: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-brand">НЕЙРО АРТЕЛЬ</div>
+      <div class="auth-title">13 уровней<br><span>мастерства Claude</span></div>
+      <div class="auth-sub">// by Андрей Вишняков</div>
+    </div>
+
+    <div class="auth-error" id="auth-error"></div>
+    <div class="auth-info" id="auth-info"></div>
+
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Войти</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Регистрация</button>
+    </div>
+
+    <div class="auth-field">
+      <label class="auth-label">Email</label>
+      <input class="auth-input" type="email" id="auth-email" placeholder="you@example.com" />
+    </div>
+
+    <div class="auth-field">
+      <label class="auth-label">Пароль</label>
+      <input class="auth-input" type="password" id="auth-password" placeholder="Минимум 6 символов"
+             onkeydown="if(event.key==='Enter') submitAuth()" />
+    </div>
+
+    <button class="auth-submit" id="auth-submit-btn" onclick="submitAuth()">Войти</button>
+
+    <div class="auth-divider">или</div>
+
+    <button class="auth-google-btn" onclick="signInGoogle()">
+      <svg width="16" height="16" viewBox="0 0 24 24">
+        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+      </svg>
+      Войти через Google
+    </button>
+
+    <div class="auth-reset-link" onclick="resetPassword()">Забыл пароль</div>
+  </div>
+</div>
+
+<!-- ═══ SETUP BANNER (когда Firebase не настроен) ═══ -->
+<div class="setup-banner" id="setup-banner">
+  ⚠️ Firebase не настроен — курс работает в режиме localStorage (прогресс не синхронизируется).
+  <a href="https://console.firebase.google.com" target="_blank">→ Настроить Firebase</a>
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">НЕЙРО АРТЕЛЬ</div>
+    <div class="logo-title">Claude<br>Self-Learning</div>
+    <div style="margin-top:0.4rem;font-family:'JetBrains Mono',monospace;font-size:0.62rem;color:var(--muted)">by Андрей Вишняков</div>
+  </div>
+
+  <!-- User profile (shown when logged in) -->
+  <div class="sidebar-user" id="sidebar-user">
+    <div class="user-avatar" id="user-avatar">?</div>
+    <div class="user-info">
+      <div class="user-email" id="user-email-display">—</div>
+      <div class="user-status">● Авторизован</div>
+    </div>
+    <button class="logout-btn" title="Выйти" onclick="doSignOut()">⏻</button>
+  </div>
+
+  <div class="sidebar-social">
+    <a class="social-link tg" href="https://t.me/neyroartel" target="_blank" rel="noopener">
+      <span class="social-link-icon">✈️</span>Telegram-канал
+    </a>
+    <a class="social-link author" href="https://t.me/andrei_vishniakov" target="_blank" rel="noopener">
+      <span class="social-link-icon">👤</span>Связаться с автором
+    </a>
+  </div>
+
+  <div class="sidebar-progress">
+    <div class="progress-label">
+      <span>Прогресс</span>
+      <span id="progress-count">0 / 13</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="sidebar-nav"></div>
+
+  <div class="sidebar-bottom">
+    <button class="api-key-btn" id="api-key-btn" onclick="openApiModal()">
+      <span id="api-icon">🔑</span>
+      <span id="api-btn-text">Добавить API ключ</span>
+    </button>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Dashboard -->
+  <div class="view active" id="view-dashboard">
+    <div class="dashboard-hero">
+      <div class="hero-tag">// НЕЙРО АРТЕЛЬ · Андрей Вишняков · 2026</div>
+      <h1 class="hero-title">13 уровней<br><span>мастерства Claude</span></h1>
+      <p class="hero-sub">От первого «Hello Claude» до многоагентных систем.<br>Каждый уровень — теория + практика в реальном чате.</p>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-val">13</div><div class="hstat-label">Уровней</div></div>
+        <div class="hstat"><div class="hstat-val">3</div><div class="hstat-label">Трека</div></div>
+        <div class="hstat"><div class="hstat-val">~26ч</div><div class="hstat-label">Материала</div></div>
+        <div class="hstat"><div class="hstat-val" id="dash-done">0</div><div class="hstat-label">Пройдено</div></div>
+      </div>
+    </div>
+
+    <div id="levels-container"></div>
+
+    <div class="achievements-section">
+      <div class="section-title">Достижения</div>
+      <div class="achiev-grid" id="achiev-grid"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="app-footer">
+      <div class="footer-inner">
+
+        <a class="footer-mentor-link" href="https://aiartel.ru/mentors" target="_blank" rel="noopener">
+          <span class="fml-icon">🧑‍🏫</span>
+          Найти нейро-наставника для повышения продуктивности
+          <span style="margin-left:0.25rem;opacity:0.5">↗</span>
+        </a>
+
+        <div class="footer-meta">
+          <div class="footer-social-row">
+            <a class="footer-social-chip tg" href="https://t.me/neyroartel" target="_blank" rel="noopener">
+              ✈️ &nbsp;t.me/neyroartel
+            </a>
+            <a class="footer-social-chip author" href="https://t.me/andrei_vishniakov" target="_blank" rel="noopener">
+              👤 &nbsp;Андрей Вишняков
+            </a>
+            <a class="footer-social-chip" href="https://aiartel.ru/mentors" target="_blank" rel="noopener">
+              🌐 &nbsp;aiartel.ru/mentors
+            </a>
+          </div>
+          <div class="footer-copy">
+            © 2026 ООО «ПОЛЕЗНЫЕ ЦИФРЫ»<br>Все права защищены
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Level view -->
+  <div class="view" id="view-level">
+    <div id="level-content"></div>
+  </div>
+
+</main>
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="api-modal">
+  <div class="modal">
+    <div class="modal-title">API Ключ Anthropic</div>
+    <p class="modal-desc">
+      Ключ хранится только в localStorage вашего браузера.<br>
+      Получить: <strong>console.anthropic.com</strong> → API Keys
+    </p>
+    <input type="password" class="modal-input" id="api-key-input" placeholder="sk-ant-api03-..." />
+    <div style="margin-bottom:0.75rem;">
+      <label style="font-family:monospace;font-size:0.68rem;color:var(--muted);display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="use-proxy" style="accent-color:var(--accent)">
+        Использовать CORS-прокси (если API недоступен напрямую)
+      </label>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeApiModal()">Отмена</button>
+      <button class="modal-btn confirm" onclick="saveApiKey()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ──────────────────────────────────────────────
+// DATA — 13 уровней
+// ──────────────────────────────────────────────
+const TRACKS = [
+  {
+    id: 'general',
+    icon: '👥',
+    title: 'Профессионалы и бизнес',
+    duration: '~6ч',
+    levels: [0,1,2,3]
+  },
+  {
+    id: 'education',
+    icon: '🎓',
+    title: 'Образование',
+    duration: '~5ч',
+    levels: [4,5,6]
+  },
+  {
+    id: 'developer',
+    icon: '⚙️',
+    title: 'Разработчики',
+    duration: '~15ч+',
+    levels: [7,8,9,10,11,12]
+  }
+];
+
+const LEVELS = [
+  // ── TRACK 1 ──
+  {
+    id: 0,
+    num: '01',
+    title: 'Claude 101 — Основы работы с Claude',
+    track: 'general',
+    difficulty: 'beginner',
+    duration: '~1ч',
+    description: 'Стартовая точка. Узнай, что такое Claude, как он устроен, и сделай первые шаги в работе с ним.',
+    topics: [
+      'Что такое Claude и чем он отличается от других AI',
+      'Интерфейс Claude.ai: проекты, история, артефакты',
+      'Базовые принципы промптинга: ясность, контекст, цель',
+      'Типы задач, с которыми Claude справляется лучше всего',
+      'Ограничения и когда не стоит полагаться на AI'
+    ],
+    practice: {
+      icon: '⚡',
+      title: '«Первый рабочий день с Claude»',
+      description: 'Интегрируй Claude в один реальный рабочий процесс за 60 минут.',
+      steps: [
+        'Выбери 3 задачи из своей работы на этой неделе (email, отчёт, план)',
+        'Реши каждую с помощью Claude — зафиксируй затраченное время',
+        'Сравни качество результата: что получилось хорошо, что — нет',
+        'Напиши себе вывод: для каких задач Claude подходит лично тебе'
+      ],
+      outcome: 'Персональный список «Claude-задач» для ежедневного использования',
+      starterPrompt: 'Привет! Я только начинаю работать с Claude. Помоги мне написать профессиональный email коллеге с просьбой перенести встречу с завтра на пятницу. Тон — вежливый и деловой.'
+    }
+  },
+  {
+    id: 1,
+    num: '02',
+    title: 'AI Fluency — AI-грамотность для работы',
+    track: 'general',
+    difficulty: 'beginner',
+    duration: '~2ч',
+    description: 'Пойми, как работают большие языковые модели, научись критически оценивать ответы и использовать AI ответственно.',
+    topics: [
+      'Как работают большие языковые модели (на простом языке)',
+      'Критическое мышление при работе с AI-ответами',
+      'Проверка фактов и борьба с галлюцинациями',
+      'Этические аспекты и ответственное использование AI',
+      'Как AI меняет профессии — и как адаптироваться'
+    ],
+    practice: {
+      icon: '🔍',
+      title: '«Детектив галлюцинаций»',
+      description: 'Научись выявлять ошибки Claude и проверять информацию.',
+      steps: [
+        'Задай Claude 5 вопросов в своей профессиональной области',
+        'Проверь каждый ответ по надёжному источнику',
+        'Найди хотя бы 1 неточность — зафиксируй, как Claude её допустил',
+        'Переформулируй вопрос так, чтобы получить более точный ответ'
+      ],
+      outcome: 'Выработанная привычка верифицировать AI-ответы',
+      starterPrompt: 'Расскажи мне о [введи свою профессию или область знаний]. Дай 5 конкретных фактов, которые я могу проверить.'
+    }
+  },
+  {
+    id: 2,
+    num: '03',
+    title: 'Prompt Engineering — Мастерство промптов',
+    track: 'general',
+    difficulty: 'intermediate',
+    duration: '~2ч',
+    description: 'Освой продвинутые техники промптинга. Научись писать промпты, которые дают именно тот результат, который тебе нужен.',
+    topics: [
+      'Структура хорошего промпта: роль, контекст, задача, формат',
+      'Техника «цепочки мыслей» (chain-of-thought)',
+      'Few-shot prompting: примеры внутри промпта',
+      'Итеративное уточнение — работа с ответами',
+      'Системные промпты и кастомизация поведения'
+    ],
+    practice: {
+      icon: '🏆',
+      title: '«Промпт-турнир»',
+      description: 'Улучши один и тот же промпт 3 раза подряд, применяя разные техники.',
+      steps: [
+        'Возьми реальную задачу: написать email, создать план, проанализировать текст',
+        'Напиши первый «наивный» промпт — сохрани результат',
+        'Улучши промпт: добавь роль + конкретный формат — сравни результат',
+        'Добавь пример желаемого вывода (few-shot) — оцени финальный результат'
+      ],
+      outcome: 'Библиотека из 3 проверенных шаблонов промптов для работы',
+      starterPrompt: 'Ты — опытный бизнес-аналитик. Проанализируй следующую ситуацию и дай структурированный ответ в формате: Проблема / Причины (3 штуки) / Решения (3 варианта) / Рекомендация.\n\nСитуация: [опиши свою задачу]'
+    }
+  },
+  {
+    id: 3,
+    num: '04',
+    title: 'AI Fluency для некоммерческих организаций',
+    track: 'general',
+    difficulty: 'beginner',
+    duration: '~1ч',
+    description: 'Специальный модуль для тех, кто работает в НКО, социальных проектах и благотворительных организациях.',
+    topics: [
+      'Применение AI в НКО: сбор средств, коммуникации, управление',
+      'Автоматизация рутинных задач с ограниченным бюджетом',
+      'Этика и прозрачность AI в социальных проектах',
+      'Кейсы: реальные организации, уже использующие Claude',
+    ],
+    practice: {
+      icon: '🌱',
+      title: '«AI-план для организации»',
+      description: 'Разработай мини-стратегию внедрения AI в конкретную задачу.',
+      steps: [
+        'Выбери одну повторяющуюся задачу в своей организации (отчёты, письма, соцсети)',
+        'Опиши Claude текущий процесс — попроси предложить оптимизацию',
+        'Составь простой промпт-шаблон для этой задачи',
+        'Протестируй на реальных данных и оцени экономию времени'
+      ],
+      outcome: 'Готовый промпт-шаблон для реального рабочего процесса',
+      starterPrompt: 'Я работаю в некоммерческой организации. Нам нужно регулярно [опиши задачу: писать отчёты / публиковать посты / отвечать донорам]. Помоги создать шаблон, который сэкономит нам время.'
+    }
+  },
+
+  // ── TRACK 2 ──
+  {
+    id: 4,
+    num: '05',
+    title: 'AI Fluency для студентов',
+    track: 'education',
+    difficulty: 'beginner',
+    duration: '~1.5ч',
+    description: 'Как использовать Claude для настоящего обучения, а не для обхода него. Техники глубокого изучения с AI.',
+    topics: [
+      'Claude как учебный ассистент, а не «решатель заданий»',
+      'Академическая честность при работе с AI',
+      'Техники изучения сложных тем с помощью AI',
+      'Карьерное планирование и поиск работы с Claude',
+      'Критическая оценка AI-сгенерированного контента'
+    ],
+    practice: {
+      icon: '🗣️',
+      title: '«Сократовский диалог»',
+      description: 'Используй Claude как умного репетитора, а не как шпаргалку.',
+      steps: [
+        'Выбери сложную тему из своей учёбы или работы',
+        'Попроси Claude объяснить её в 3 уровнях: для ребёнка, студента, эксперта',
+        'Задай 5 уточняющих вопросов — углубись в непонятное',
+        'Попроси создать тест из 5 вопросов — пройди его и проверь знания'
+      ],
+      outcome: 'Освоенная техника «AI как репетитор» для любой дисциплины',
+      starterPrompt: 'Объясни мне тему "[вставь свою тему]" в трёх версиях:\n1. Для 10-летнего ребёнка\n2. Для студента университета\n3. Для эксперта в этой области\n\nПосле каждого объяснения задай мне один вопрос, чтобы проверить понимание.'
+    }
+  },
+  {
+    id: 5,
+    num: '06',
+    title: 'AI Fluency для преподавателей',
+    track: 'education',
+    difficulty: 'intermediate',
+    duration: '~2ч',
+    description: 'Как интегрировать AI в учебный процесс, создавать AI-устойчивые задания и оценивать студентов в эпоху генеративного AI.',
+    topics: [
+      'Интеграция AI в учебный план без потери глубины обучения',
+      'Создание учебных материалов с помощью Claude',
+      'Разработка заданий, устойчивых к AI-списыванию',
+      'Оценка работ студентов в эпоху AI',
+      'Политика AI в вашем учебном заведении'
+    ],
+    practice: {
+      icon: '📝',
+      title: '«AI-устойчивое задание»',
+      description: 'Переработай существующее задание так, чтобы оно оценивало мышление, а не фактический ответ.',
+      steps: [
+        'Возьми одно из своих текущих заданий',
+        'Попроси Claude «выполнить» его — посмотри, что получится',
+        'Определи, что в задании можно сделать без реального понимания',
+        'Переработай: добавь личный опыт, рефлексию, применение к конкретному контексту'
+      ],
+      outcome: 'Переработанное задание, развивающее критическое мышление',
+      starterPrompt: 'Выполни это учебное задание как студент:\n\n[вставь своё задание]\n\nПосле выполнения объясни: что ты сделал автоматически, без реального понимания темы?'
+    }
+  },
+  {
+    id: 6,
+    num: '07',
+    title: 'Teaching AI Fluency — Преподавание AI-грамотности',
+    track: 'education',
+    difficulty: 'advanced',
+    duration: '~1.5ч',
+    description: 'Стань тем, кто учит других AI-грамотности. Разработай курс, создай оценочные критерии, работай с сопротивлением.',
+    topics: [
+      'Разработка курса по AI-грамотности с нуля',
+      'Фреймворк AI Fluency: ключевые компетенции',
+      'Оценка AI-грамотности студентов',
+      'Ресурсы под лицензией Creative Commons от Anthropic',
+      'Работа с сопротивлением в академической среде'
+    ],
+    practice: {
+      icon: '🎯',
+      title: '«Мини-курс за 1 день»',
+      description: 'Разработай структуру 3-часового введения в AI-грамотность для своей аудитории.',
+      steps: [
+        'Определи свою аудиторию: возраст, уровень, контекст',
+        'Попроси Claude создать программу из 3 модулей по 1 часу',
+        'Разработай одно практическое задание для каждого модуля',
+        'Создай критерии оценки: как ты поймёшь, что студент «AI-грамотен»'
+      ],
+      outcome: 'Готовая структура курса по AI-грамотности',
+      starterPrompt: 'Помоги мне разработать 3-часовой вводный курс по AI-грамотности для [опиши аудиторию].\n\nСтруктура каждого часа: тема, ключевые концепции, практическое задание, результат.\n\nАудитория ничего не знает об AI.'
+    }
+  },
+
+  // ── TRACK 3 ──
+  {
+    id: 7,
+    num: '08',
+    title: 'Anthropic API Fundamentals',
+    track: 'developer',
+    difficulty: 'beginner',
+    duration: '~3ч',
+    description: 'Всё для старта разработки с Claude API. От получения ключа до стриминга и управления токенами.',
+    topics: [
+      'Получение API-ключа, настройка среды (Python/JS SDK)',
+      'Структура запроса: messages, system, max_tokens, temperature',
+      'Мультимодальные промпты: текст + изображения',
+      'Streaming responses для real-time UX',
+      'Управление контекстным окном и токенами'
+    ],
+    practice: {
+      icon: '💻',
+      title: '«Первый Claude-клиент»',
+      description: 'Напиши рабочий скрипт, выполняющий все базовые операции с API.',
+      steps: [
+        'Установи SDK: pip install anthropic — сделай первый hello world',
+        'Добавь system prompt: создай «персонажа» (эксперт в твоей области)',
+        'Реализуй streaming вывод в терминал с индикатором загрузки',
+        'Добавь подсчёт токенов и предупреждение при превышении лимита'
+      ],
+      outcome: 'Рабочий CLI-чат с настраиваемой персоной и стримингом',
+      starterPrompt: 'Напиши минимальный Python-скрипт для работы с Anthropic API.\n\nТребования:\n- Использует claude-sonnet-4-6\n- Принимает ввод пользователя в цикле\n- Системный промпт: "Ты — опытный Python-разработчик"\n- Показывает количество использованных токенов после каждого ответа\n\nДай готовый код с комментариями.'
+    }
+  },
+  {
+    id: 8,
+    num: '09',
+    title: 'Prompt Engineering Interactive Tutorial',
+    track: 'developer',
+    difficulty: 'intermediate',
+    duration: '~2ч',
+    description: 'Продвинутый промптинг для разработчиков: XML-теги, extended thinking, JSON-вывод, A/B тестирование.',
+    topics: [
+      'XML-теги для структурирования сложных промптов',
+      'Chain-of-thought: <thinking> и extended thinking',
+      'Few-shot examples в системном промпте',
+      'Контроль формата вывода: JSON, markdown, схемы',
+      'A/B тестирование промптов программно'
+    ],
+    practice: {
+      icon: '🧪',
+      title: '«Промпт-лаборатория»',
+      description: 'Построй систему автоматического сравнения промптов.',
+      steps: [
+        'Возьми одну задачу (классификация, извлечение данных, генерация)',
+        'Напиши 3 разных промпта для неё (простой, с XML, с few-shot)',
+        'Прогони каждый 5 раз — замеряй качество и стоимость в токенах',
+        'Визуализируй результаты в таблице и выбери победителя'
+      ],
+      outcome: 'Скрипт для автоматического A/B тестирования промптов',
+      starterPrompt: 'Я хочу научиться использовать XML-теги в промптах. Покажи разницу между:\n\n1. Простым промптом: "Классифицируй этот текст как позитивный/негативный/нейтральный"\n2. Структурированным с XML-тегами\n3. С few-shot примерами\n\nДля текста: "Сегодня провалил презентацию, но команда поддержала"\n\nПокажи все три варианта промпта и объясни разницу в результатах.'
+    }
+  },
+  {
+    id: 9,
+    num: '10',
+    title: 'Tool Use — Function Calling',
+    track: 'developer',
+    difficulty: 'intermediate',
+    duration: '~2.5ч',
+    description: 'Дай Claude реальные инструменты. Научи его вызывать функции, обрабатывать результаты и принимать многошаговые решения.',
+    topics: [
+      'Определение инструментов: JSON Schema описания',
+      'Цикл tool_use → tool_result в многошаговых вызовах',
+      'Параллельное и последовательное использование инструментов',
+      'Обработка ошибок и fallback стратегии',
+      'Инструменты для работы с файлами, API, базами данных'
+    ],
+    practice: {
+      icon: '🤖',
+      title: '«Агент-исследователь»',
+      description: 'Создай Claude-агента с 3 инструментами, решающего реальную задачу.',
+      steps: [
+        'Определи 3 инструмента: web_search, get_weather, calculate (можно мок)',
+        'Реализуй цикл исполнения: вызов → обработка → следующий шаг',
+        'Попроси агента: «Что надеть завтра в Москве?»',
+        'Логируй каждый шаг рассуждений агента и вызовы инструментов'
+      ],
+      outcome: 'Работающий multi-tool агент с пошаговым логированием',
+      starterPrompt: 'Напиши JSON Schema для инструмента get_weather, который:\n- Принимает: city (string), date (string, ISO формат)\n- Возвращает: temperature, conditions, humidity\n\nЗатем покажи, как выглядит полный цикл API-запроса с этим инструментом:\n1. Запрос к Claude с инструментом\n2. Ответ с tool_use\n3. Наш вызов функции\n4. Передача tool_result обратно\n5. Финальный ответ Claude'
+    }
+  },
+  {
+    id: 10,
+    num: '11',
+    title: 'Building with Claude API (Advanced)',
+    track: 'developer',
+    difficulty: 'advanced',
+    duration: '~4ч',
+    description: 'Архитектура AI-приложений: RAG, управление памятью, prompt caching, batch API, безопасность.',
+    topics: [
+      'Архитектурные паттерны AI-приложений (RAG, агенты, пайплайны)',
+      'Управление историей диалога и долгосрочной памятью',
+      'Prompt caching для снижения затрат (до 90%)',
+      'Батч-обработка с Batch API (до 50% дешевле)',
+      'Безопасность: prompt injection, rate limiting, мониторинг'
+    ],
+    practice: {
+      icon: '🏗️',
+      title: '«RAG-система за вечер»',
+      description: 'Построй минимальную RAG систему для вопросов по документам.',
+      steps: [
+        'Возьми 5-10 текстовых документов (статьи, README, инструкции)',
+        'Разбей их на чанки, сохрани в простой векторной БД (ChromaDB)',
+        'При запросе: находи топ-3 релевантных чанка, передавай в контекст Claude',
+        'Добавь prompt caching для часто используемого системного промпта'
+      ],
+      outcome: 'Рабочая RAG система с измеримой экономией токенов',
+      starterPrompt: 'Объясни архитектуру RAG (Retrieval-Augmented Generation) и покажи минимальный Python-код:\n\n1. Разбивка документа на чанки (chunk_size=500, overlap=50)\n2. Векторизация через любой embeddings API\n3. Поиск топ-3 релевантных чанков\n4. Формирование промпта с контекстом для Claude\n\nКод должен быть рабочим и с комментариями.'
+    }
+  },
+  {
+    id: 11,
+    num: '12',
+    title: 'MCP — Model Context Protocol',
+    track: 'developer',
+    difficulty: 'advanced',
+    duration: '~2ч',
+    description: 'Стандарт интеграции AI с внешними системами. Создай свой MCP-сервер и подключи Claude к реальным данным.',
+    topics: [
+      'Что такое MCP и зачем он нужен (вместо кастомных интеграций)',
+      'Архитектура: хост, клиент, сервер, транспорт',
+      'Примитивы: Tools, Resources, Prompts',
+      'Stdio vs SSE транспорт: когда что выбирать',
+      'Экосистема готовых MCP-серверов (Filesystem, GitHub, Slack...)'
+    ],
+    practice: {
+      icon: '🔌',
+      title: '«Первый MCP-сервер»',
+      description: 'Создай простой MCP-сервер с 2 инструментами за 1 час.',
+      steps: [
+        'Установи MCP SDK: npm install @modelcontextprotocol/sdk',
+        'Создай сервер с инструментом read_file — читает файл по пути',
+        'Добавь инструмент list_directory — возвращает список файлов',
+        'Подключи к Claude Desktop и протестируй: «Что в папке ~/Documents?»'
+      ],
+      outcome: 'Работающий MCP-сервер, подключённый к Claude Desktop',
+      starterPrompt: 'Напиши минимальный MCP-сервер на TypeScript/Node.js с двумя инструментами:\n\n1. read_file(path: string) → содержимое файла\n2. list_directory(path: string) → массив файлов\n\nПокажи:\n- package.json с зависимостями\n- server.ts с реализацией\n- Как добавить в claude_desktop_config.json\n\nБез лишних объяснений — только рабочий код.'
+    }
+  },
+  {
+    id: 12,
+    num: '13',
+    title: 'MCP Advanced — Многоагентные системы',
+    track: 'developer',
+    difficulty: 'advanced',
+    duration: '~3ч',
+    description: 'Вершина курса. Строй многоагентные системы с MCP: оркестратор + субагенты, динамические ресурсы, OAuth, масштабирование.',
+    topics: [
+      'Многоагентные архитектуры: оркестратор + субагенты',
+      'Resources: динамические контекстные данные',
+      'Stateless масштабирование MCP-серверов',
+      'OAuth и аутентификация в MCP',
+      'Тестирование и отладка MCP с Inspector'
+    ],
+    practice: {
+      icon: '🚀',
+      title: '«Агент-автоматизатор»',
+      description: 'Построй агента, выполняющего реальный рабочий workflow через MCP.',
+      steps: [
+        'Выбери workflow: создание issue в GitHub → поиск похожих → назначение',
+        'Подключи MCP-серверы GitHub + Filesystem (или другую пару)',
+        'Напиши системный промпт оркестратора с чёткими правилами',
+        'Протестируй граничные случаи: что если API вернул ошибку?'
+      ],
+      outcome: 'Многошаговый агент, автоматизирующий реальный рабочий процесс',
+      starterPrompt: 'Помоги мне спроектировать многоагентную систему для автоматизации code review:\n\n- Оркестратор: принимает PR, распределяет задачи\n- Агент безопасности: проверяет на уязвимости\n- Агент качества: проверяет стиль и тесты\n- Агент документации: проверяет docstrings\n\nПокажи:\n1. Диаграмму взаимодействия агентов\n2. Системный промпт для оркестратора\n3. Пример JSON-протокола обмена между агентами'
+    }
+  }
+];
+
+const ACHIEVEMENTS = [
+  { id: 'first_step', icon: '👶', name: 'Первый шаг', condition: d => d >= 1 },
+  { id: 'general_done', icon: '💼', name: 'Профи', condition: d => progress.filter(l => LEVELS[l].track === 'general').length === 4 },
+  { id: 'edu_done', icon: '🎓', name: 'Педагог', condition: d => progress.filter(l => LEVELS[l].track === 'education').length === 3 },
+  { id: 'dev_done', icon: '⚙️', name: 'Девелопер', condition: d => progress.filter(l => LEVELS[l].track === 'developer').length === 6 },
+  { id: 'halfway', icon: '🌗', name: 'Полпути', condition: d => d >= 6 },
+  { id: 'all_done', icon: '🏆', name: 'Мастер Claude', condition: d => d >= 13 },
+  { id: 'api_user', icon: '🔑', name: 'API-мастер', condition: d => !!localStorage.getItem('claude_api_key') },
+  { id: 'note_taker', icon: '📓', name: 'Конспектор', condition: d => Object.keys(notes).length >= 3 },
+];
+
+// ──────────────────────────────────────────────
+// STATE
+// ──────────────────────────────────────────────
+let progress = JSON.parse(localStorage.getItem('claude_progress') || '[]');
+let notes = JSON.parse(localStorage.getItem('claude_notes') || '{}');
+let currentLevel = null;
+let currentTab = 'topics';
+let chatHistory = {};
+let apiKey = localStorage.getItem('claude_api_key') || '';
+let useProxy = localStorage.getItem('claude_use_proxy') === 'true';
+
+function saveProgress() { localStorage.setItem('claude_progress', JSON.stringify(progress)); }
+function saveNotes() { localStorage.setItem('claude_notes', JSON.stringify(notes)); }
+
+// ──────────────────────────────────────────────
+// RENDER
+// ──────────────────────────────────────────────
+function getStatus(id) {
+  if (progress.includes(id)) return 'done';
+  return 'pending';
+}
+
+function renderSidebar() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = '';
+
+  TRACKS.forEach(track => {
+    const sec = document.createElement('div');
+    sec.className = 'sidebar-section';
+    sec.innerHTML = `<div class="section-label">${track.icon} ${track.title}</div>`;
+
+    track.levels.forEach(li => {
+      const lvl = LEVELS[li];
+      const status = getStatus(lvl.id);
+      const isActive = currentLevel === lvl.id;
+      const btn = document.createElement('button');
+      btn.className = 'level-nav-item' + (isActive ? ' active' : '');
+      btn.innerHTML = `
+        <span class="nav-num">${lvl.num}</span>
+        <span style="flex:1;text-align:left;line-height:1.3">${lvl.title.split('—')[0].trim()}</span>
+        <span class="nav-dot ${status === 'done' ? 'done' : ''}"></span>
+      `;
+      btn.onclick = () => openLevel(lvl.id);
+      sec.appendChild(btn);
+    });
+
+    nav.appendChild(sec);
+  });
+}
+
+function renderProgressBar() {
+  const done = progress.length;
+  const total = LEVELS.length;
+  document.getElementById('progress-count').textContent = `${done} / ${total}`;
+  document.getElementById('progress-fill').style.width = `${(done/total)*100}%`;
+  const dashDone = document.getElementById('dash-done');
+  if (dashDone) dashDone.textContent = done;
+}
+
+function renderDashboard() {
+  const container = document.getElementById('levels-container');
+  container.innerHTML = '';
+
+  TRACKS.forEach(track => {
+    const group = document.createElement('div');
+    group.className = 'track-group';
+
+    const doneInTrack = track.levels.filter(li => progress.includes(LEVELS[li].id)).length;
+
+    group.innerHTML = `
+      <div class="track-heading">
+        <h3>${track.icon} ${track.title}</h3>
+        <span style="font-family:monospace;font-size:0.68rem;color:var(--muted)">${track.duration}</span>
+        <span class="track-count">${doneInTrack}/${track.levels.length}</span>
+      </div>
+      <div class="levels-grid"></div>
+    `;
+
+    const grid = group.querySelector('.levels-grid');
+
+    track.levels.forEach(li => {
+      const lvl = LEVELS[li];
+      const status = getStatus(lvl.id);
+      const diffMap = { beginner: ['pill-green','Начинающий'], intermediate: ['pill-blue','Средний'], advanced: ['pill-purple','Продвинутый'] };
+      const [pillClass, diffLabel] = diffMap[lvl.difficulty];
+
+      const card = document.createElement('div');
+      card.className = `level-card ${status}`;
+      card.innerHTML = `
+        <div class="level-num-badge">${lvl.num}</div>
+        <div class="level-info">
+          <div class="level-card-title">${lvl.title}</div>
+          <div class="level-card-meta">
+            <span class="pill ${pillClass}">${diffLabel}</span>
+            <span class="level-duration">${lvl.duration}</span>
+          </div>
+        </div>
+        <div class="card-status">${status === 'done' ? '✅' : '→'}</div>
+      `;
+      card.onclick = () => openLevel(lvl.id);
+      grid.appendChild(card);
+    });
+
+    container.appendChild(group);
+  });
+
+  renderAchievements();
+}
+
+function renderAchievements() {
+  const grid = document.getElementById('achiev-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  ACHIEVEMENTS.forEach(a => {
+    const earned = a.condition(progress.length);
+    const card = document.createElement('div');
+    card.className = 'achiev-card' + (earned ? ' earned' : '');
+    card.innerHTML = `
+      <div class="achiev-icon">${a.icon}</div>
+      <div class="achiev-name">${a.name}</div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+// ──────────────────────────────────────────────
+// LEVEL VIEW
+// ──────────────────────────────────────────────
+function openLevel(id) {
+  currentLevel = id;
+  currentTab = 'topics';
+  const lvl = LEVELS.find(l => l.id === id);
+
+  showView('level');
+  renderSidebar();
+
+  const diffMap = { beginner: ['pill-green','Начинающий'], intermediate: ['pill-blue','Средний'], advanced: ['pill-purple','Продвинутый'] };
+  const [pillClass, diffLabel] = diffMap[lvl.difficulty];
+  const isDone = progress.includes(id);
+  const trackInfo = TRACKS.find(t => t.levels.includes(id));
+
+  const prevId = id > 0 ? id - 1 : null;
+  const nextId = id < LEVELS.length - 1 ? id + 1 : null;
+
+  const savedNote = notes[id] || '';
+  const wsHtml = renderWorkspace(lvl);
+
+  document.getElementById('level-content').innerHTML = `
+    <div class="level-breadcrumb">
+      <span class="bc-link" onclick="showDashboard()">← Все уровни</span>
+      <span>/</span>
+      <span>${trackInfo.icon} ${trackInfo.title}</span>
+      <span>/</span>
+      <span>${lvl.num}</span>
+    </div>
+
+    <div class="level-header">
+      <div class="level-header-top">
+        <div>
+          <div style="display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem">
+            <span class="pill ${pillClass}">${diffLabel}</span>
+            <span style="font-family:monospace;font-size:0.65rem;color:var(--muted)">${lvl.duration}</span>
+          </div>
+          <h1>${lvl.title}</h1>
+        </div>
+        <button class="complete-btn ${isDone ? 'done' : ''}" id="complete-btn" onclick="toggleComplete(${id})">
+          ${isDone ? '✅ Пройдено' : '○ Отметить пройденным'}
+        </button>
+      </div>
+      <p class="level-desc">${lvl.description}</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tab-topics" onclick="switchTab('topics')">Темы</button>
+      <button class="tab-btn" id="tab-practice" onclick="switchTab('practice')">Задание</button>
+      <button class="tab-btn" id="tab-workspace" onclick="switchTab('workspace')">Практика ↗</button>
+      <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">Заметки</button>
+    </div>
+
+    <div class="tab-pane active" id="tab-pane-topics">
+      <div class="topics-section">
+        <div class="section-title">Что изучим</div>
+        <ul class="topics-list">
+          ${lvl.topics.map(t => `<li>${t}</li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="tab-pane" id="tab-pane-practice">
+      <div class="practice-block">
+        <div class="practice-header">
+          <div class="practice-icon">${lvl.practice.icon}</div>
+          <div class="practice-meta">
+            <div class="practice-tag">⚡ Практическое задание</div>
+            <div class="practice-title">${lvl.practice.title}</div>
+          </div>
+        </div>
+        <p class="practice-desc">${lvl.practice.description}</p>
+        <ul class="steps-list">
+          ${lvl.practice.steps.map(s => `<li>${s}</li>`).join('')}
+        </ul>
+        <div class="outcome-tag">✓ Итог: ${lvl.practice.outcome}</div>
+      </div>
+      <button class="complete-btn" style="margin-bottom:0" onclick="switchTab('workspace');loadStarterPrompt(${id})">
+        Попробовать в практике →
+      </button>
+    </div>
+
+    <div class="tab-pane" id="tab-pane-workspace">
+      ${wsHtml}
+    </div>
+
+    <div class="tab-pane" id="tab-pane-notes">
+      <div class="section-title">Мои заметки</div>
+      <textarea class="notes-area" id="notes-area" placeholder="Записывай ключевые инсайты, вопросы, примеры промптов...">${savedNote}</textarea>
+      <div style="display:flex;align-items:center">
+        <button class="notes-save-btn" onclick="saveNote(${id})">Сохранить</button>
+        <span class="notes-saved" id="notes-saved">✓ Сохранено</span>
+      </div>
+    </div>
+
+    <div class="level-nav-btns">
+      <button class="nav-btn" onclick="${prevId !== null ? `openLevel(${prevId})` : ''}" ${prevId === null ? 'disabled' : ''}>
+        ← ${prevId !== null ? LEVELS[prevId].num + ' ' + LEVELS[prevId].title.split('—')[0].trim() : ''}
+      </button>
+      <button class="nav-btn next" onclick="${nextId !== null ? `openLevel(${nextId})` : 'showDashboard()'}" >
+        ${nextId !== null ? LEVELS[nextId].num + ' ' + LEVELS[nextId].title.split('—')[0].trim() : 'Все уровни'} →
+      </button>
+    </div>
+  `;
+
+  window.scrollTo(0,0);
+}
+
+function renderWorkspace(lvl) {
+  const msgs = chatHistory[lvl.id] || [];
+  const hasKey = !!apiKey;
+
+  if (!hasKey) {
+    return `
+      <div class="workspace">
+        <div class="workspace-header">
+          <span class="ws-title">🤖 Практика с Claude</span>
+          <span class="ws-status offline">Нет API ключа</span>
+        </div>
+        <div class="ws-no-key">
+          Для живой практики добавь API ключ.<br>
+          <a onclick="openApiModal()">→ Добавить ключ</a><br><br>
+          Или практикуйся на <strong>claude.ai</strong> — скопируй стартовый промпт с вкладки «Задание».
+        </div>
+      </div>
+    `;
+  }
+
+  const msgsHtml = msgs.map(m => `<div class="ws-msg ${m.role}">${escHtml(m.content)}</div>`).join('');
+
+  return `
+    <div class="workspace">
+      <div class="workspace-header">
+        <span class="ws-title">🤖 Практика с Claude</span>
+        <span class="ws-status connected">API Connected</span>
+        <button onclick="clearChat(${lvl.id})" style="margin-left:0.5rem;background:none;border:none;color:var(--muted);cursor:pointer;font-family:monospace;font-size:0.65rem">Очистить</button>
+      </div>
+      <div class="workspace-body">
+        <div class="ws-messages" id="ws-messages">
+          ${msgs.length === 0 ? '<div class="ws-msg system">Напиши промпт или используй стартовый ↗</div>' : msgsHtml}
+        </div>
+        <div class="ws-input-row">
+          <textarea class="ws-input" id="ws-input" placeholder="Напиши промпт..." onkeydown="wsKeydown(event, ${lvl.id})"></textarea>
+          <button class="ws-send-btn" id="ws-send" onclick="sendMessage(${lvl.id})">Отправить</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+// ──────────────────────────────────────────────
+// TABS
+// ──────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.getElementById(`tab-pane-${tab}`).classList.add('active');
+}
+
+function loadStarterPrompt(id) {
+  const lvl = LEVELS.find(l => l.id === id);
+  const inp = document.getElementById('ws-input');
+  if (inp && lvl) inp.value = lvl.practice.starterPrompt;
+}
+
+// ──────────────────────────────────────────────
+// PROGRESS
+// ──────────────────────────────────────────────
+function toggleComplete(id) {
+  const was = progress.includes(id);
+  if (was) {
+    progress = progress.filter(i => i !== id);
+  } else {
+    progress.push(id);
+    showToast('✅ Уровень пройден! +1 к мастерству');
+    checkAchievements();
+  }
+  saveProgress();
+  renderProgressBar();
+  renderSidebar();
+  renderDashboard();
+
+  const btn = document.getElementById('complete-btn');
+  if (btn) {
+    btn.textContent = progress.includes(id) ? '✅ Пройдено' : '○ Отметить пройденным';
+    btn.classList.toggle('done', progress.includes(id));
+  }
+}
+
+function checkAchievements() {
+  ACHIEVEMENTS.forEach(a => {
+    const key = 'ach_' + a.id;
+    const earned = a.condition(progress.length);
+    if (earned && !localStorage.getItem(key)) {
+      localStorage.setItem(key, '1');
+      setTimeout(() => showToast(`${a.icon} Достижение: ${a.name}!`, 3500), 1000);
+    }
+  });
+}
+
+// ──────────────────────────────────────────────
+// NOTES
+// ──────────────────────────────────────────────
+function saveNote(id) {
+  const area = document.getElementById('notes-area');
+  if (!area) return;
+  notes[id] = area.value;
+  saveNotes();
+  const saved = document.getElementById('notes-saved');
+  if (saved) {
+    saved.classList.add('show');
+    setTimeout(() => saved.classList.remove('show'), 2000);
+  }
+  renderAchievements();
+}
+
+// ──────────────────────────────────────────────
+// CHAT / API
+// ──────────────────────────────────────────────
+async function sendMessage(levelId) {
+  const input = document.getElementById('ws-input');
+  const sendBtn = document.getElementById('ws-send');
+  const messagesEl = document.getElementById('ws-messages');
+  if (!input || !messagesEl) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  if (!chatHistory[levelId]) chatHistory[levelId] = [];
+
+  // Add user message
+  chatHistory[levelId].push({ role: 'user', content: text });
+  input.value = '';
+  sendBtn.disabled = true;
+
+  // Render user msg
+  const userMsg = document.createElement('div');
+  userMsg.className = 'ws-msg user';
+  userMsg.textContent = text;
+  const systemMsg = messagesEl.querySelector('.ws-msg.system');
+  if (systemMsg) systemMsg.remove();
+  messagesEl.appendChild(userMsg);
+
+  // Thinking indicator
+  const thinking = document.createElement('div');
+  thinking.className = 'ws-msg thinking';
+  thinking.innerHTML = `<span>Claude думает</span><span class="dot-anim"><span></span><span></span><span></span></span>`;
+  messagesEl.appendChild(thinking);
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+
+  try {
+    const lvl = LEVELS.find(l => l.id === levelId);
+    const systemPrompt = `Ты — опытный преподаватель и практик по теме "${lvl.title}". Ты помогаешь студенту освоить эту тему на практике. Отвечай по-русски, конкретно и практично. Если студент пишет код или промпты — давай конкретные рабочие примеры.`;
+
+    const messages = chatHistory[levelId].map(m => ({ role: m.role, content: m.content }));
+
+    let responseText = '';
+
+    // Try direct API first, then proxy
+    const endpoint = useProxy
+      ? 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.anthropic.com/v1/messages')
+      : 'https://api.anthropic.com/v1/messages';
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    };
+
+    // CORS note: direct browser calls to Anthropic API are blocked.
+    // We'll do a direct fetch and handle CORS error gracefully.
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.error?.message || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    responseText = data.content?.[0]?.text || '(пустой ответ)';
+
+    chatHistory[levelId].push({ role: 'assistant', content: responseText });
+
+    thinking.remove();
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'ws-msg assistant';
+    aiMsg.innerHTML = escHtml(responseText);
+    messagesEl.appendChild(aiMsg);
+
+  } catch (err) {
+    thinking.remove();
+    const errMsg = document.createElement('div');
+    errMsg.className = 'ws-msg system';
+
+    if (err.message.includes('Failed to fetch') || err.message.includes('CORS')) {
+      errMsg.innerHTML = `⚠️ CORS-ошибка: браузер блокирует прямые запросы к API.<br>
+        Решение: открой <strong>claude.ai</strong> и практикуйся там.<br>
+        <a onclick="copyPrompt(${currentLevel})" style="color:var(--accent);cursor:pointer">Скопировать стартовый промпт →</a>`;
+    } else {
+      errMsg.textContent = `⚠️ Ошибка: ${err.message}`;
+    }
+    messagesEl.appendChild(errMsg);
+    // Remove last user message from history on error
+    chatHistory[levelId].pop();
+  }
+
+  sendBtn.disabled = false;
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function copyPrompt(levelId) {
+  const lvl = LEVELS.find(l => l.id === levelId);
+  if (!lvl) return;
+  navigator.clipboard.writeText(lvl.practice.starterPrompt).then(() => {
+    showToast('📋 Промпт скопирован! Вставь в claude.ai');
+  });
+}
+
+function wsKeydown(e, levelId) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage(levelId);
+  }
+}
+
+function clearChat(levelId) {
+  chatHistory[levelId] = [];
+  const msgs = document.getElementById('ws-messages');
+  if (msgs) msgs.innerHTML = '<div class="ws-msg system">Чат очищен</div>';
+}
+
+// ──────────────────────────────────────────────
+// API MODAL
+// ──────────────────────────────────────────────
+function openApiModal() {
+  document.getElementById('api-key-input').value = apiKey;
+  document.getElementById('use-proxy').checked = useProxy;
+  document.getElementById('api-modal').classList.add('open');
+}
+
+function closeApiModal() {
+  document.getElementById('api-modal').classList.remove('open');
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  useProxy = document.getElementById('use-proxy').checked;
+  if (val) {
+    apiKey = val;
+    localStorage.setItem('claude_api_key', val);
+    localStorage.setItem('claude_use_proxy', useProxy);
+    updateApiBtn();
+    showToast('🔑 API ключ сохранён');
+    checkAchievements();
+  }
+  closeApiModal();
+  // Re-render workspace if on level view
+  if (currentLevel !== null) openLevel(currentLevel);
+}
+
+function updateApiBtn() {
+  const btn = document.getElementById('api-key-btn');
+  const icon = document.getElementById('api-icon');
+  const text = document.getElementById('api-btn-text');
+  if (apiKey) {
+    btn.classList.add('set');
+    icon.textContent = '✅';
+    text.textContent = 'API: sk-ant-...'+apiKey.slice(-4);
+  } else {
+    btn.classList.remove('set');
+    icon.textContent = '🔑';
+    text.textContent = 'Добавить API ключ';
+  }
+}
+
+// ──────────────────────────────────────────────
+// NAVIGATION
+// ──────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+}
+
+function showDashboard() {
+  currentLevel = null;
+  showView('dashboard');
+  renderDashboard();
+  renderProgressBar();
+  renderSidebar();
+  window.scrollTo(0,0);
+}
+
+// ──────────────────────────────────────────────
+// TOAST
+// ──────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ──────────────────────────────────────────────
+// FIREBASE AUTH UI
+// ──────────────────────────────────────────────
+function showAuthScreen() {
+  document.getElementById('auth-screen').classList.add('show');
+}
+
+function hideAuthScreen() {
+  document.getElementById('auth-screen').classList.remove('show');
+}
+
+function showFirebaseSetupBanner() {
+  document.getElementById('setup-banner').classList.add('show');
+}
+
+let authMode = 'login'; // 'login' | 'register'
+
+function switchAuthTab(mode) {
+  authMode = mode;
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Войти' : 'Создать аккаунт';
+  clearAuthMessages();
+}
+
+function clearAuthMessages() {
+  const err = document.getElementById('auth-error');
+  const info = document.getElementById('auth-info');
+  err.classList.remove('show');
+  info.classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('auth-info').classList.remove('show');
+}
+
+function showAuthInfo(msg) {
+  const el = document.getElementById('auth-info');
+  el.textContent = msg;
+  el.classList.add('show');
+  document.getElementById('auth-error').classList.remove('show');
+}
+
+// Firebase error messages → readable RU
+function fbErrRu(code) {
+  const map = {
+    'auth/user-not-found': 'Пользователь с таким email не найден.',
+    'auth/wrong-password': 'Неверный пароль.',
+    'auth/invalid-credential': 'Неверный email или пароль.',
+    'auth/email-already-in-use': 'Этот email уже зарегистрирован — войди.',
+    'auth/weak-password': 'Пароль слишком короткий (минимум 6 символов).',
+    'auth/invalid-email': 'Некорректный формат email.',
+    'auth/too-many-requests': 'Слишком много попыток. Подождите немного.',
+    'auth/popup-closed-by-user': 'Окно Google закрыто. Попробуй снова.',
+    'auth/network-request-failed': 'Ошибка сети. Проверь подключение.'
+  };
+  return map[code] || `Ошибка: ${code}`;
+}
+
+async function submitAuth() {
+  const fb = window.__fb;
+  if (!fb?.CONFIGURED) return;
+
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-password').value;
+  const btn   = document.getElementById('auth-submit-btn');
+
+  if (!email || !pass) { showAuthError('Заполни email и пароль.'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '...';
+  clearAuthMessages();
+
+  try {
+    if (authMode === 'login') {
+      await fb.signInWithEmailAndPassword(fb.auth, email, pass);
+    } else {
+      const cred = await fb.createUserWithEmailAndPassword(fb.auth, email, pass);
+      await fb.sendEmailVerification(cred.user);
+      showAuthInfo('✉️ Письмо с подтверждением отправлено. Можешь сразу начать курс!');
+    }
+  } catch (e) {
+    showAuthError(fbErrRu(e.code));
+    btn.disabled = false;
+    btn.textContent = authMode === 'login' ? 'Войти' : 'Создать аккаунт';
+  }
+}
+
+async function signInGoogle() {
+  const fb = window.__fb;
+  if (!fb?.CONFIGURED) return;
+  try {
+    await fb.signInWithPopup(fb.auth, fb.googleProvider);
+  } catch (e) {
+    showAuthError(fbErrRu(e.code));
+  }
+}
+
+async function resetPassword() {
+  const fb = window.__fb;
+  if (!fb?.CONFIGURED) return;
+  const email = document.getElementById('auth-email').value.trim();
+  if (!email) { showAuthError('Введи email выше, затем нажми «Забыл пароль».'); return; }
+  try {
+    await fb.sendPasswordResetEmail(fb.auth, email);
+    showAuthInfo(`✉️ Письмо для сброса пароля отправлено на ${email}`);
+  } catch(e) {
+    showAuthError(fbErrRu(e.code));
+  }
+}
+
+async function doSignOut() {
+  const fb = window.__fb;
+  if (fb?.CONFIGURED) await fb.signOut(fb.auth);
+  showAuthScreen();
+  document.getElementById('sidebar-user').classList.remove('show');
+}
+
+// ──────────────────────────────────────────────
+// USER PROFILE IN SIDEBAR
+// ──────────────────────────────────────────────
+function renderUserProfile(user) {
+  const el = document.getElementById('sidebar-user');
+  if (!el) return;
+  el.classList.add('show');
+
+  const emailStr = user.email || user.displayName || 'Аноним';
+  document.getElementById('user-email-display').textContent = emailStr;
+
+  const initials = (user.displayName
+    ? user.displayName.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2)
+    : emailStr[0].toUpperCase());
+  document.getElementById('user-avatar').textContent = initials;
+}
+
+// ──────────────────────────────────────────────
+// FIRESTORE — загрузка / сохранение
+// ──────────────────────────────────────────────
+async function loadUserData(uid) {
+  const fb = window.__fb;
+  if (!fb?.CONFIGURED) return; // used localStorage
+
+  try {
+    const ref  = fb.doc(fb.db, 'users', uid);
+    const snap = await fb.getDoc(ref);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (Array.isArray(data.progress)) progress = data.progress;
+      if (data.notes && typeof data.notes === 'object') notes = data.notes;
+      if (data.apiKey) apiKey = data.apiKey;
+    }
+  } catch(e) {
+    console.warn('Firestore load error', e);
+  }
+}
+
+async function syncToFirestore() {
+  const fb  = window.__fb;
+  const uid = window.__currentUser?.uid;
+  if (!fb?.CONFIGURED || !uid) { saveProgress(); saveNotes(); return; }
+
+  try {
+    const ref = fb.doc(fb.db, 'users', uid);
+    await fb.setDoc(ref, {
+      progress,
+      notes,
+      apiKey: apiKey ? apiKey.slice(-8) : '', // не храним полный ключ
+      updatedAt: fb.serverTimestamp()
+    }, { merge: true });
+  } catch(e) {
+    console.warn('Firestore sync error', e);
+    saveProgress(); saveNotes(); // fallback
+  }
+}
+
+// ──────────────────────────────────────────────
+// OVERRIDE saveProgress / saveNotes → Firestore
+// ──────────────────────────────────────────────
+const _origSaveProgress = saveProgress;
+saveProgress = function() {
+  localStorage.setItem('claude_progress', JSON.stringify(progress));
+  syncToFirestore();
+};
+
+const _origSaveNotes = saveNotes;
+saveNotes = function() {
+  localStorage.setItem('claude_notes', JSON.stringify(notes));
+  syncToFirestore();
+};
+
+// ──────────────────────────────────────────────
+// INIT (вызывается после auth или сразу если нет Firebase)
+// ──────────────────────────────────────────────
+function renderApp() {
+  renderSidebar();
+  renderProgressBar();
+  renderDashboard();
+  updateApiBtn();
+}
+
+// Запуск: если Firebase не настроен — сразу показываем приложение
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (!window.__fb?.CONFIGURED) renderApp();
+  });
+} else {
+  if (!window.__fb?.CONFIGURED) renderApp();
+}
+</script>
+</body>
+</html>
