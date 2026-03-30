@@ -1,1 +1,2 @@
-/* /index.html 200
+# Static single-page app — no redirects needed
+# Cloudflare serves index.html automatically for /
