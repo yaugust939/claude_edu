@@ -1714,6 +1714,40 @@ const LEVELS = [
     difficulty: 'beginner',
     duration: '~1ч',
     description: 'Стартовая точка. Узнай, что такое Claude, как он устроен, и сделай первые шаги в работе с ним.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Что такое Claude?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Claude — это большая языковая модель (LLM) от Anthropic. В отличие от поисковика, который <em>ищет</em> готовые ответы в интернете, Claude <em>генерирует</em> текст, рассуждая на основе паттернов из огромного корпуса текстов. Он не имеет доступа к интернету в реальном времени и может ошибаться — это важно понимать с первого дня.
+        </p>
+
+        <div class="section-title">Контекстное окно — главная суперсила</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Claude видит весь текст разговора сразу — это называется <strong style="color:var(--text)">контекстным окном</strong>. У Claude это ~200 000 токенов (~150 000 слов). Это значит: чем больше контекста ты даёшь, тем точнее ответ. Вставляй документы, код, примеры прямо в чат.
+        </p>
+
+        <div class="section-title">Формула хорошего промпта</div>
+        <div style="background:var(--surface2);border-left:3px solid var(--accent);padding:1rem 1.2rem;margin-bottom:1.2rem;font-family:monospace;font-size:0.85rem;color:var(--text)">
+          <div style="color:var(--accent);margin-bottom:0.4rem">// Структура промпта</div>
+          <div>🎭 <strong>Роль:</strong> «Ты — опытный копирайтер...»</div>
+          <div>📋 <strong>Задача:</strong> «Напиши email для...»</div>
+          <div>📎 <strong>Контекст:</strong> «Аудитория — B2B клиенты...»</div>
+          <div>📐 <strong>Формат:</strong> «3 абзаца, деловой тон»</div>
+        </div>
+
+        <div class="section-title">Когда Claude — правильный выбор</div>
+        <ul class="topics-list">
+          <li>✅ Написание, редактирование, резюме текстов</li>
+          <li>✅ Анализ данных и документов</li>
+          <li>✅ Мозговой штурм и генерация идей</li>
+          <li>✅ Объяснение сложных концепций</li>
+          <li>✅ Написание и отладка кода</li>
+          <li>❌ Актуальные новости и события (нет интернета)</li>
+          <li>❌ Точные расчёты (используй калькулятор/код)</li>
+          <li>❌ Юридические/медицинские решения (нужен специалист)</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Что такое Claude и чем он отличается от других AI',
       'Интерфейс Claude.ai: проекты, история, артефакты',
@@ -1743,6 +1777,35 @@ const LEVELS = [
     difficulty: 'beginner',
     duration: '~2ч',
     description: 'Пойми, как работают большие языковые модели, научись критически оценивать ответы и использовать AI ответственно.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Как работает LLM (без магии)</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          LLM — это модель, которая предсказывает следующий токен (часть слова) на основе обучения на триллионах текстов. Она не «думает» в человеческом смысле — она находит статистически вероятное продолжение. Это объясняет как возможности, так и ограничения.
+        </p>
+
+        <div class="section-title">Галлюцинации: враг №1</div>
+        <div style="background:rgba(232,89,10,0.1);border:1px solid rgba(232,89,10,0.3);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <div style="color:var(--accent2);font-weight:700;margin-bottom:0.5rem">⚠️ Галлюцинация — когда Claude уверенно врёт</div>
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Claude может придумать несуществующие статьи, цитаты, законы, имена. Особенно опасно при поиске конкретных фактов, дат, ссылок. <strong style="color:var(--text)">Правило: всегда проверяй фактические утверждения.</strong>
+          </p>
+        </div>
+
+        <div class="section-title">Детектор галлюцинаций</div>
+        <ul class="topics-list">
+          <li>🔍 Попроси дать источник — если Claude не может назвать конкретный, насторожись</li>
+          <li>🔍 Задай уточняющий вопрос «Ты уверен?» — часто сам исправится</li>
+          <li>🔍 Проверяй имена, даты, числа через поиск</li>
+          <li>🔍 Спроси «Что ты не знаешь по этой теме?»</li>
+        </ul>
+
+        <div class="section-title">AI как мыслящий партнёр</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0">
+          Самые продуктивные пользователи Claude относятся к нему как к <strong style="color:var(--text)">думающему стажёру с энциклопедическими знаниями</strong>: умному, быстрому, но требующему проверки и направления. Ты — критик, Claude — генератор.
+        </p>
+      </div>
+    `,
     topics: [
       'Как работают большие языковые модели (на простом языке)',
       'Критическое мышление при работе с AI-ответами',
@@ -1772,6 +1835,44 @@ const LEVELS = [
     difficulty: 'intermediate',
     duration: '~2ч',
     description: 'Освой продвинутые техники промптинга. Научись писать промпты, которые дают именно тот результат, который тебе нужен.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Почему важен промпт?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Claude — мощный инструмент, но его сила зависит от качества вопроса. Плохой промпт даёт расплывчатый ответ. Точный промпт даёт точный результат. <strong style="color:var(--text)">Промпт-инжиниринг — это коммуникация, а не программирование.</strong>
+        </p>
+
+        <div class="section-title">Четыре кита хорошего промпта</div>
+        <div style="background:var(--surface2);border-left:3px solid var(--accent);padding:1rem 1.2rem;margin-bottom:1.2rem;font-family:monospace;font-size:0.85rem;color:var(--text)">
+          <div style="margin-bottom:0.6rem">🎭 <strong>Роль</strong> — кем должен стать Claude? «Ты — юрист с 10-летним опытом»</div>
+          <div style="margin-bottom:0.6rem">📋 <strong>Задача</strong> — что конкретно нужно? «Проанализируй этот договор на риски»</div>
+          <div style="margin-bottom:0.6rem">📎 <strong>Контекст</strong> — что Claude должен знать? Вставь документ, данные, примеры</div>
+          <div>📐 <strong>Формат</strong> — как должен выглядеть ответ? «Таблица из 3 столбцов: риск / вероятность / решение»</div>
+        </div>
+
+        <div class="section-title">Цепочка мыслей (Chain-of-Thought)</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0.8rem">
+          Добавь в промпт: <strong style="color:var(--text)">«Думай шаг за шагом»</strong> или <strong style="color:var(--text)">«Объясни своё рассуждение»</strong> — и Claude становится на 30–40% точнее в сложных задачах. Модель буквально думает вслух перед ответом.
+        </p>
+        <div style="background:rgba(79,142,247,0.1);border:1px solid rgba(79,142,247,0.3);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <div style="color:var(--blue);font-weight:700;margin-bottom:0.4rem;font-size:0.85rem">ПРИМЕР</div>
+          <p style="color:var(--muted);font-size:0.88rem;margin:0">«Реши эту задачу шаг за шагом, показывая каждый этап рассуждения, прежде чем дать финальный ответ.»</p>
+        </div>
+
+        <div class="section-title">Few-shot: примеры внутри промпта</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Покажи Claude 2–3 примера «вход → выход» перед своей задачей. Это самый быстрый способ передать нужный формат и стиль без длинного описания.
+        </p>
+
+        <div class="section-title">Итеративное уточнение</div>
+        <ul class="topics-list">
+          <li>🔄 Не жди идеального промпта с первого раза — улучшай его</li>
+          <li>🔄 Если ответ плохой — спроси «Что не так с моим промптом?»</li>
+          <li>🔄 Используй «Попробуй ещё раз, но более...» (кратко / формально / конкретно)</li>
+          <li>🔄 Сохраняй удачные промпты в личную библиотеку шаблонов</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Структура хорошего промпта: роль, контекст, задача, формат',
       'Техника «цепочки мыслей» (chain-of-thought)',
@@ -1801,6 +1902,52 @@ const LEVELS = [
     difficulty: 'beginner',
     duration: '~1ч',
     description: 'Специальный модуль для тех, кто работает в НКО, социальных проектах и благотворительных организациях.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">AI и НКО: другой контекст</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          НКО работают с ограниченными ресурсами, высокой миссионерской нагрузкой и требованиями к прозрачности. Claude может стать мощным мультипликатором — не заменяя людей, а освобождая их время для главного.
+        </p>
+
+        <div class="section-title">Где Claude экономит время НКО</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;margin-bottom:1.2rem">
+          <div style="background:var(--surface2);border-radius:8px;padding:0.9rem">
+            <div style="color:var(--green);font-weight:700;margin-bottom:0.4rem;font-size:0.85rem">✅ ИДЕАЛЬНО</div>
+            <ul style="color:var(--muted);font-size:0.84rem;line-height:1.7;list-style:none">
+              <li>• Гранты и отчёты</li>
+              <li>• Пресс-релизы и новости</li>
+              <li>• Обучающие материалы</li>
+              <li>• Письма донорам</li>
+              <li>• Перевод документов</li>
+            </ul>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.9rem">
+            <div style="color:var(--accent);font-weight:700;margin-bottom:0.4rem;font-size:0.85rem">⚠️ С ОСТОРОЖНОСТЬЮ</div>
+            <ul style="color:var(--muted);font-size:0.84rem;line-height:1.7;list-style:none">
+              <li>• Юридические документы</li>
+              <li>• Финансовые данные</li>
+              <li>• Персональные истории</li>
+              <li>• Медицинская поддержка</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="section-title">Этика и прозрачность</div>
+        <div style="background:rgba(232,89,10,0.08);border:1px solid rgba(232,89,10,0.25);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Если ваша организация работает с уязвимыми группами населения — <strong style="color:var(--text)">всегда сообщайте бенефициарам, что коммуникация создана с помощью AI</strong>. Это не слабость — это честность, которая укрепляет доверие.
+          </p>
+        </div>
+
+        <div class="section-title">Быстрый старт для команды</div>
+        <ul class="topics-list">
+          <li>🌱 Начни с одной повторяющейся задачи — не пытайся внедрить всё сразу</li>
+          <li>🌱 Создай 3–5 промпт-шаблонов для типовых документов организации</li>
+          <li>🌱 Обучи коллег за 1 час: покажи 3 реальных кейса</li>
+          <li>🌱 Anthropic даёт скидки для НКО — проверь eligibility на anthropic.com</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Применение AI в НКО: сбор средств, коммуникации, управление',
       'Автоматизация рутинных задач с ограниченным бюджетом',
@@ -1831,6 +1978,38 @@ const LEVELS = [
     difficulty: 'beginner',
     duration: '~1.5ч',
     description: 'Как использовать Claude для настоящего обучения, а не для обхода него. Техники глубокого изучения с AI.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">AI для учёбы: ловушка и возможность</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Попросить Claude написать реферат — это выстрел в ногу. Ты не научился ничему, а преподаватель скорее всего заметит. Но использовать Claude как умного репетитора — это честный лайфхак, который ускоряет понимание в разы.
+        </p>
+
+        <div class="section-title">Метод «Сократовского диалога»</div>
+        <div style="background:var(--surface2);border-left:3px solid var(--blue);padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.88rem;color:var(--text)">
+          <div style="color:var(--blue);margin-bottom:0.5rem;font-weight:700">Вместо «Напиши мне реферат» — попробуй:</div>
+          <div style="color:var(--muted);line-height:1.7">
+            «Объясни мне эту тему так, чтобы я мог объяснить её другу. После объяснения задай мне 3 вопроса для проверки.»
+          </div>
+        </div>
+
+        <div class="section-title">Академическая честность</div>
+        <div style="background:rgba(232,89,10,0.08);border:1px solid rgba(232,89,10,0.25);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Всегда проверяй политику своего вуза насчёт AI. <strong style="color:var(--text)">Использование Claude для понимания материала — обычно разрешено. Сдача AI-текста как своего — это плагиат.</strong> Граница важна — узнай, где она проходит у твоих преподавателей.
+          </p>
+        </div>
+
+        <div class="section-title">5 способов учиться с Claude</div>
+        <ul class="topics-list">
+          <li>📚 <strong>Объяснение на разных уровнях</strong> — «объясни как для 10-летнего, потом для студента»</li>
+          <li>📚 <strong>Сократовский метод</strong> — «задавай мне вопросы, пока я не пойму»</li>
+          <li>📚 <strong>Тестирование знаний</strong> — «создай тест из 10 вопросов по теме X»</li>
+          <li>📚 <strong>Разбор ошибок</strong> — «проверь мой текст/решение и объясни, что неверно»</li>
+          <li>📚 <strong>Аналогии</strong> — «объясни квантовую механику через аналогию с чем-то бытовым»</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Claude как учебный ассистент, а не «решатель заданий»',
       'Академическая честность при работе с AI',
@@ -1860,6 +2039,54 @@ const LEVELS = [
     difficulty: 'intermediate',
     duration: '~2ч',
     description: 'Как интегрировать AI в учебный процесс, создавать AI-устойчивые задания и оценивать студентов в эпоху генеративного AI.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Новая реальность: AI уже в аудитории</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Ваши студенты уже используют AI — запреты не работают. Лучший ответ — стать экспертом в AI-эпохе образования: создавать задания, которые AI не может выполнить вместо студента, и использовать AI как усилитель собственной педагогики.
+        </p>
+
+        <div class="section-title">Что Claude может за вас</div>
+        <ul class="topics-list" style="margin-bottom:1.2rem">
+          <li>✅ Создание черновиков учебных материалов и заданий</li>
+          <li>✅ Генерация тестов с ответами и объяснениями</li>
+          <li>✅ Адаптация текстов под разные уровни сложности</li>
+          <li>✅ Составление рубрик оценивания</li>
+          <li>✅ Подготовка примеров для объяснения концепций</li>
+        </ul>
+
+        <div class="section-title">AI-устойчивые задания: принципы</div>
+        <div style="background:var(--surface2);border-left:3px solid var(--purple);padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.88rem">
+          <div style="color:var(--purple);font-weight:700;margin-bottom:0.6rem">Задание устойчиво к AI, если требует:</div>
+          <div style="color:var(--muted);line-height:1.8">
+            🧠 Личного опыта («опишите случай из вашей практики»)<br>
+            🧠 Рефлексии («как это изменило ваши взгляды?»)<br>
+            🧠 Применения к конкретному контексту студента<br>
+            🧠 Живого обсуждения или устного ответа<br>
+            🧠 Итеративного процесса с документацией мышления
+          </div>
+        </div>
+
+        <div class="section-title">Политика AI: три модели</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin-bottom:0">
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="color:var(--red,#f87171);font-size:1.2rem">🚫</div>
+            <div style="color:var(--text);font-size:0.8rem;font-weight:700;margin:0.3rem 0">Без AI</div>
+            <div style="color:var(--muted);font-size:0.75rem">Навыки, требующие чистого мышления</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="color:var(--yellow);font-size:1.2rem">⚠️</div>
+            <div style="color:var(--text);font-size:0.8rem;font-weight:700;margin:0.3rem 0">AI с раскрытием</div>
+            <div style="color:var(--muted);font-size:0.75rem">Разрешено, но нужно указать как использовали</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem;text-align:center">
+            <div style="color:var(--green);font-size:1.2rem">✅</div>
+            <div style="color:var(--text);font-size:0.8rem;font-weight:700;margin:0.3rem 0">AI интегрирован</div>
+            <div style="color:var(--muted);font-size:0.75rem">Задание спроектировано с AI как инструментом</div>
+          </div>
+        </div>
+      </div>
+    `,
     topics: [
       'Интеграция AI в учебный план без потери глубины обучения',
       'Создание учебных материалов с помощью Claude',
@@ -1889,6 +2116,49 @@ const LEVELS = [
     difficulty: 'advanced',
     duration: '~1.5ч',
     description: 'Стань тем, кто учит других AI-грамотности. Разработай курс, создай оценочные критерии, работай с сопротивлением.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Что такое AI Fluency?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          AI-грамотность — не умение пользоваться конкретным инструментом, а набор устойчивых навыков: понимание принципов LLM, критическая оценка вывода, этическое использование, адаптация к новым инструментам. Anthropic выделяет 4 ключевые компетенции.
+        </p>
+
+        <div class="section-title">4 компетенции AI Fluency</div>
+        <div style="display:grid;gap:0.6rem;margin-bottom:1.2rem">
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start">
+            <span style="font-size:1.2rem;flex-shrink:0">🧠</span>
+            <div><div style="color:var(--text);font-weight:700;font-size:0.88rem">Понимание</div><div style="color:var(--muted);font-size:0.82rem">Как работают LLM, что такое токены, контекст, галлюцинации</div></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start">
+            <span style="font-size:1.2rem;flex-shrink:0">🎯</span>
+            <div><div style="color:var(--text);font-weight:700;font-size:0.88rem">Применение</div><div style="color:var(--muted);font-size:0.82rem">Эффективное создание промптов для реальных задач</div></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start">
+            <span style="font-size:1.2rem;flex-shrink:0">🔍</span>
+            <div><div style="color:var(--text);font-weight:700;font-size:0.88rem">Критика</div><div style="color:var(--muted);font-size:0.82rem">Верификация фактов, выявление предвзятости, оценка качества</div></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem;display:flex;gap:0.8rem;align-items:flex-start">
+            <span style="font-size:1.2rem;flex-shrink:0">⚖️</span>
+            <div><div style="color:var(--text);font-weight:700;font-size:0.88rem">Этика</div><div style="color:var(--muted);font-size:0.82rem">Ответственное использование, прозрачность, влияние на общество</div></div>
+          </div>
+        </div>
+
+        <div class="section-title">Работа с сопротивлением</div>
+        <div style="background:rgba(232,89,10,0.08);border:1px solid rgba(232,89,10,0.25);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            «AI заменит учителей» — главный страх. Ответ: <strong style="color:var(--text)">AI меняет роль педагога от носителя информации к архитектору опыта</strong>. Это повышение статуса, а не его снижение. Покажи коллегам, что AI берёт рутину, а они получают больше времени на настоящее обучение.
+          </p>
+        </div>
+
+        <div class="section-title">Ресурсы от Anthropic</div>
+        <ul class="topics-list">
+          <li>📦 Готовые учебные материалы под Creative Commons лицензией</li>
+          <li>📦 Программа для преподавателей с поддержкой и примерами</li>
+          <li>📦 Исследования по эффективности AI в образовании</li>
+          <li>📦 Шаблоны политик AI для учебных заведений</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Разработка курса по AI-грамотности с нуля',
       'Фреймворк AI Fluency: ключевые компетенции',
@@ -1920,6 +2190,55 @@ const LEVELS = [
     difficulty: 'beginner',
     duration: '~3ч',
     description: 'Всё для старта разработки с Claude API. От получения ключа до стриминга и управления токенами.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">API vs. claude.ai: в чём разница?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Claude.ai — готовый интерфейс для людей. API — программный доступ для разработчиков: ты встраиваешь Claude в свои приложения, автоматизируешь процессы, строишь продукты. Один API-ключ — и Claude работает внутри твоего кода.
+        </p>
+
+        <div class="section-title">Анатомия API-запроса</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-family:monospace;font-size:0.8rem;color:var(--text);overflow-x:auto">
+          <div style="color:var(--muted);margin-bottom:0.6rem">// Минимальный запрос к Anthropic API</div>
+          <div style="color:var(--blue)">POST</div> <span style="color:var(--muted)">https://api.anthropic.com/v1/messages</span><br><br>
+          <div style="color:var(--purple)">{</div>
+          <div style="padding-left:1.2rem;color:var(--muted)">
+            <span style="color:var(--green)">"model"</span>: <span style="color:var(--accent2)">"claude-sonnet-4-5"</span>,<br>
+            <span style="color:var(--green)">"max_tokens"</span>: <span style="color:var(--yellow)">1024</span>,<br>
+            <span style="color:var(--green)">"messages"</span>: [{<br>
+            <span style="padding-left:1.2rem;color:var(--green)">"role"</span>: <span style="color:var(--accent2)">"user"</span>,<br>
+            <span style="padding-left:1.2rem;color:var(--green)">"content"</span>: <span style="color:var(--accent2)">"Привет!"</span><br>
+            }]
+          </div>
+          <div style="color:var(--purple)">}</div>
+        </div>
+
+        <div class="section-title">Ключевые параметры</div>
+        <div style="display:grid;gap:0.5rem;margin-bottom:1.2rem">
+          <div style="background:var(--surface2);border-radius:6px;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center">
+            <span style="color:var(--green);font-family:monospace;font-size:0.85rem">model</span>
+            <span style="color:var(--muted);font-size:0.82rem">claude-sonnet-4-5 / claude-haiku-3-5</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center">
+            <span style="color:var(--green);font-family:monospace;font-size:0.85rem">max_tokens</span>
+            <span style="color:var(--muted);font-size:0.82rem">Максимум токенов в ответе (1–8192)</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center">
+            <span style="color:var(--green);font-family:monospace;font-size:0.85rem">system</span>
+            <span style="color:var(--muted);font-size:0.82rem">Системный промпт — задаёт поведение</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:0.7rem 1rem;display:flex;justify-content:space-between;align-items:center">
+            <span style="color:var(--green);font-family:monospace;font-size:0.85rem">temperature</span>
+            <span style="color:var(--muted);font-size:0.82rem">0 = детерминированно, 1 = случайно</span>
+          </div>
+        </div>
+
+        <div class="section-title">Стоимость: токены</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0">
+          1 токен ≈ 0.75 слова. Запрос «Привет, как дела?» — около 8 токенов. Ответ на 500 слов — ~700 токенов. Входные и выходные токены тарифицируются отдельно. Claude Haiku в 10–15 раз дешевле Sonnet — используй его для прототипов.
+        </p>
+      </div>
+    `,
     topics: [
       'Получение API-ключа, настройка среды (Python/JS SDK)',
       'Структура запроса: messages, system, max_tokens, temperature',
@@ -1949,6 +2268,48 @@ const LEVELS = [
     difficulty: 'intermediate',
     duration: '~2ч',
     description: 'Продвинутый промптинг для разработчиков: XML-теги, extended thinking, JSON-вывод, A/B тестирование.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">XML-теги: структура для Claude</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0.8rem">
+          Claude обучен на XML-размеченных данных, поэтому XML-теги в промптах дают чёткую структуру. Это особенно важно для сложных промптов с несколькими элементами.
+        </p>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-family:monospace;font-size:0.8rem;color:var(--text)">
+          <div style="color:var(--muted);margin-bottom:0.5rem">// Структурированный промпт с XML-тегами</div>
+          <div style="color:var(--blue)">&lt;task&gt;</div>Классифицируй тональность отзыва<div style="color:var(--blue)">&lt;/task&gt;</div><br>
+          <div style="color:var(--green)">&lt;examples&gt;</div><br>
+          <div style="padding-left:1rem"><div style="color:var(--green)">&lt;example&gt;</div>Ужасный сервис → негативный<div style="color:var(--green)">&lt;/example&gt;</div></div>
+          <div style="padding-left:1rem"><div style="color:var(--green)">&lt;example&gt;</div>Всё отлично! → позитивный<div style="color:var(--green)">&lt;/example&gt;</div></div>
+          <div style="color:var(--green)">&lt;/examples&gt;</div><br>
+          <div style="color:var(--purple)">&lt;review&gt;</div>{текст отзыва}<div style="color:var(--purple)">&lt;/review&gt;</div>
+        </div>
+
+        <div class="section-title">Extended Thinking</div>
+        <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <div style="color:var(--purple);font-weight:700;margin-bottom:0.4rem;font-size:0.85rem">🧠 Думай перед ответом</div>
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Параметр <code style="color:var(--text);background:var(--surface2);padding:0.1rem 0.4rem;border-radius:3px">thinking: {"type": "enabled", "budget_tokens": 5000}</code> заставляет Claude «думать вслух» перед ответом. Для сложных задач (математика, логика, стратегия) это повышает точность на 20–50%.
+          </p>
+        </div>
+
+        <div class="section-title">JSON-вывод для разработчиков</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0.8rem">
+          Для интеграции в код нужен предсказуемый формат. Два способа:
+        </p>
+        <ul class="topics-list" style="margin-bottom:1.2rem">
+          <li>🔧 <strong>Промпт-метод:</strong> «Верни только валидный JSON без объяснений»</li>
+          <li>🔧 <strong>Pre-fill метод:</strong> начни ответ ассистента с <code style="color:var(--accent)">{"</code> — Claude продолжит JSON</li>
+        </ul>
+
+        <div class="section-title">A/B тестирование промптов</div>
+        <ul class="topics-list">
+          <li>📊 Всегда тестируй на одинаковом наборе входных данных</li>
+          <li>📊 Запускай каждый вариант минимум 5 раз (из-за температуры)</li>
+          <li>📊 Измеряй: точность, длину ответа, стоимость в токенах</li>
+          <li>📊 Автоматизируй через скрипт — руками это непрактично</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'XML-теги для структурирования сложных промптов',
       'Chain-of-thought: <thinking> и extended thinking',
@@ -1978,6 +2339,58 @@ const LEVELS = [
     difficulty: 'intermediate',
     duration: '~2.5ч',
     description: 'Дай Claude реальные инструменты. Научи его вызывать функции, обрабатывать результаты и принимать многошаговые решения.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Что такое Tool Use?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Tool Use (Function Calling) позволяет Claude выходить за рамки текста: вызывать твои функции, получать данные из реального мира и действовать на основе результатов. Это превращает LLM в агента.
+        </p>
+
+        <div class="section-title">Цикл взаимодействия</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.84rem">
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+            <span style="background:var(--accent);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700">1</span>
+            <span style="color:var(--text)">Ты отправляешь запрос + список доступных инструментов</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+            <span style="background:var(--blue);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700">2</span>
+            <span style="color:var(--text)">Claude отвечает <code style="color:var(--accent)">tool_use</code> — называет функцию и параметры</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+            <span style="background:var(--green);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700">3</span>
+            <span style="color:var(--text)">Ты выполняешь функцию в своём коде</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem">
+            <span style="background:var(--purple);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700">4</span>
+            <span style="color:var(--text)">Возвращаешь результат как <code style="color:var(--accent)">tool_result</code></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.6rem">
+            <span style="background:var(--accent2);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.75rem;font-weight:700">5</span>
+            <span style="color:var(--text)">Claude формирует финальный ответ на основе данных</span>
+          </div>
+        </div>
+
+        <div class="section-title">Описание инструмента (JSON Schema)</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-family:monospace;font-size:0.78rem;color:var(--text)">
+          <div style="color:var(--purple)">{</div>
+          <div style="padding-left:1rem">
+            <span style="color:var(--green)">"name"</span>: <span style="color:var(--accent2)">"get_weather"</span>,<br>
+            <span style="color:var(--green)">"description"</span>: <span style="color:var(--accent2)">"Возвращает погоду в городе"</span>,<br>
+            <span style="color:var(--green)">"input_schema"</span>: {<br>
+            <span style="padding-left:1rem;color:var(--green)">"type"</span>: <span style="color:var(--accent2)">"object"</span>,<br>
+            <span style="padding-left:1rem;color:var(--green)">"properties"</span>: {<span style="color:var(--green)">"city"</span>: {<span style="color:var(--green)">"type"</span>: <span style="color:var(--accent2)">"string"</span>}},<br>
+            <span style="padding-left:1rem;color:var(--green)">"required"</span>: [<span style="color:var(--accent2)">"city"</span>]<br>
+            }
+          </div>
+          <div style="color:var(--purple)">}</div>
+        </div>
+
+        <div class="section-title">Параллельный Tool Use</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:0">
+          Claude может вызвать несколько инструментов одновременно, если они независимы. Например, для «Погода в Москве и Берлине» — два вызова get_weather параллельно. Это ускоряет выполнение многошаговых задач.
+        </p>
+      </div>
+    `,
     topics: [
       'Определение инструментов: JSON Schema описания',
       'Цикл tool_use → tool_result в многошаговых вызовах',
@@ -2007,6 +2420,45 @@ const LEVELS = [
     difficulty: 'advanced',
     duration: '~4ч',
     description: 'Архитектура AI-приложений: RAG, управление памятью, prompt caching, batch API, безопасность.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Архитектурные паттерны AI-приложений</div>
+        <div style="display:grid;gap:0.6rem;margin-bottom:1.2rem">
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem">
+            <div style="color:var(--accent2);font-weight:700;font-size:0.85rem;margin-bottom:0.3rem">🗂️ RAG (Retrieval-Augmented Generation)</div>
+            <div style="color:var(--muted);font-size:0.82rem">Хранишь документы в векторной БД → при запросе находишь релевантные → передаёшь в контекст. Решает проблему устаревших знаний и галлюцинаций на фактах.</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem">
+            <div style="color:var(--blue);font-weight:700;font-size:0.85rem;margin-bottom:0.3rem">🤖 Агентный паттерн</div>
+            <div style="color:var(--muted);font-size:0.82rem">Claude в цикле: получает задачу → решает → вызывает инструменты → оценивает результат → продолжает пока задача не решена. Подходит для многошаговых задач.</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:8px;padding:0.8rem 1rem">
+            <div style="color:var(--purple);font-weight:700;font-size:0.85rem;margin-bottom:0.3rem">🔗 Пайплайн</div>
+            <div style="color:var(--muted);font-size:0.82rem">Последовательность вызовов Claude: вывод одного — ввод следующего. Хорошо для сложных трансформаций: перевод → резюме → классификация.</div>
+          </div>
+        </div>
+
+        <div class="section-title">Prompt Caching — экономия до 90%</div>
+        <div style="background:rgba(62,207,142,0.1);border:1px solid rgba(62,207,142,0.3);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Добавь <code style="color:var(--text);background:var(--surface2);padding:0.1rem 0.4rem;border-radius:3px">"cache_control": {"type": "ephemeral"}</code> к большим неизменным частям промпта (системный промпт, документы). Anthropic кэширует их на 5 минут. Повторные запросы с тем же началом стоят на 90% меньше.
+          </p>
+        </div>
+
+        <div class="section-title">Batch API — обработка тысяч запросов</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Message Batches API позволяет отправить до 100 000 запросов одним вызовом. Выполняется асинхронно (до 24 часов), стоит на <strong style="color:var(--text)">50% дешевле</strong>. Идеален для обработки датасетов, массовой генерации контента.
+        </p>
+
+        <div class="section-title">Безопасность AI-приложений</div>
+        <ul class="topics-list">
+          <li>🔒 <strong>Prompt Injection</strong> — пользователь пытается переопределить системный промпт: «Игнорируй все предыдущие инструкции...». Защита: разделяй системный и пользовательский ввод XML-тегами</li>
+          <li>🔒 <strong>Rate Limiting</strong> — ограничивай запросы на пользователя во избежание злоупотреблений</li>
+          <li>🔒 <strong>Input Validation</strong> — проверяй длину и содержание ввода до отправки в API</li>
+          <li>🔒 <strong>Output Filtering</strong> — проверяй ответы перед отображением пользователю</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Архитектурные паттерны AI-приложений (RAG, агенты, пайплайны)',
       'Управление историей диалога и долгосрочной памятью',
@@ -2036,6 +2488,61 @@ const LEVELS = [
     difficulty: 'advanced',
     duration: '~2ч',
     description: 'Стандарт интеграции AI с внешними системами. Создай свой MCP-сервер и подключи Claude к реальным данным.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Зачем нужен MCP?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          До MCP каждая интеграция Claude с внешней системой (GitHub, Slack, БД) требовала кастомного кода. MCP — это открытый стандарт от Anthropic: <strong style="color:var(--text)">один протокол для всех интеграций</strong>. Написал MCP-сервер один раз — он работает с Claude Desktop, Claude Code и любым другим MCP-клиентом.
+        </p>
+
+        <div class="section-title">Архитектура MCP</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.85rem">
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+            <div style="text-align:center;flex:1;min-width:80px">
+              <div style="background:var(--accent);border-radius:6px;padding:0.5rem;color:white;font-weight:700;font-size:0.8rem">🖥️ Host</div>
+              <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem">Claude Desktop / твоё приложение</div>
+            </div>
+            <div style="color:var(--muted);font-size:1.2rem">→</div>
+            <div style="text-align:center;flex:1;min-width:80px">
+              <div style="background:var(--blue);border-radius:6px;padding:0.5rem;color:white;font-weight:700;font-size:0.8rem">🔗 Client</div>
+              <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem">MCP-клиент (в хосте)</div>
+            </div>
+            <div style="color:var(--muted);font-size:1.2rem">→</div>
+            <div style="text-align:center;flex:1;min-width:80px">
+              <div style="background:var(--purple);border-radius:6px;padding:0.5rem;color:white;font-weight:700;font-size:0.8rem">⚙️ Server</div>
+              <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem">Твой MCP-сервер</div>
+            </div>
+            <div style="color:var(--muted);font-size:1.2rem">→</div>
+            <div style="text-align:center;flex:1;min-width:80px">
+              <div style="background:var(--green);border-radius:6px;padding:0.5rem;color:white;font-weight:700;font-size:0.8rem">🌐 Data</div>
+              <div style="color:var(--muted);font-size:0.75rem;margin-top:0.3rem">GitHub / БД / файлы</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Три примитива MCP</div>
+        <div style="display:grid;gap:0.6rem;margin-bottom:1.2rem">
+          <div style="background:var(--surface2);border-radius:6px;padding:0.8rem 1rem;display:flex;gap:0.8rem">
+            <span style="color:var(--accent);font-family:monospace;font-weight:700;font-size:0.9rem;flex-shrink:0">Tools</span>
+            <span style="color:var(--muted);font-size:0.85rem">Функции, которые Claude может вызвать: read_file, create_issue, send_message</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:0.8rem 1rem;display:flex;gap:0.8rem">
+            <span style="color:var(--blue);font-family:monospace;font-weight:700;font-size:0.9rem;flex-shrink:0">Resources</span>
+            <span style="color:var(--muted);font-size:0.85rem">Данные с URI: file://, db://, api:// — Claude читает их как контекст</span>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:0.8rem 1rem;display:flex;gap:0.8rem">
+            <span style="color:var(--purple);font-family:monospace;font-weight:700;font-size:0.9rem;flex-shrink:0">Prompts</span>
+            <span style="color:var(--muted);font-size:0.85rem">Шаблоны промптов, встроенные в сервер — пользователь вызывает их по имени</span>
+          </div>
+        </div>
+
+        <div class="section-title">Stdio vs SSE транспорт</div>
+        <ul class="topics-list">
+          <li>📡 <strong>Stdio</strong> — локальный процесс, общение через stdin/stdout. Для Claude Desktop</li>
+          <li>📡 <strong>SSE (HTTP)</strong> — сетевой сервер, может работать удалённо. Для облачных интеграций</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Что такое MCP и зачем он нужен (вместо кастомных интеграций)',
       'Архитектура: хост, клиент, сервер, транспорт',
@@ -2065,6 +2572,57 @@ const LEVELS = [
     difficulty: 'advanced',
     duration: '~3ч',
     description: 'Вершина курса. Строй многоагентные системы с MCP: оркестратор + субагенты, динамические ресурсы, OAuth, масштабирование.',
+    theory: `
+      <div class="topics-section">
+        <div class="section-title">Многоагентные системы: зачем?</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          Один Claude хорошо справляется с задачами, помещающимися в контекстное окно. Сложные долгосрочные задачи требуют <strong style="color:var(--text)">команды агентов</strong>: оркестратор планирует, субагенты специализируются и работают параллельно.
+        </p>
+
+        <div class="section-title">Паттерн: Оркестратор + Субагенты</div>
+        <div style="background:var(--surface2);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.2rem;font-size:0.84rem">
+          <div style="text-align:center;margin-bottom:0.8rem">
+            <span style="background:var(--accent);color:white;padding:0.4rem 1rem;border-radius:20px;font-weight:700">🎯 Оркестратор</span>
+            <div style="color:var(--muted);font-size:0.78rem;margin-top:0.3rem">Получает задачу, планирует, делегирует, синтезирует результаты</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:0.5rem;flex-wrap:wrap">
+            <div style="text-align:center">
+              <span style="background:var(--blue);color:white;padding:0.3rem 0.7rem;border-radius:20px;font-size:0.78rem">🔍 Поиск</span>
+            </div>
+            <div style="text-align:center">
+              <span style="background:var(--green);color:white;padding:0.3rem 0.7rem;border-radius:20px;font-size:0.78rem">💻 Код</span>
+            </div>
+            <div style="text-align:center">
+              <span style="background:var(--purple);color:white;padding:0.3rem 0.7rem;border-radius:20px;font-size:0.78rem">✍️ Текст</span>
+            </div>
+            <div style="text-align:center">
+              <span style="background:var(--yellow);color:var(--bg);padding:0.3rem 0.7rem;border-radius:20px;font-size:0.78rem">🔒 Ревью</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Доверие между агентами</div>
+        <div style="background:rgba(232,89,10,0.1);border:1px solid rgba(232,89,10,0.3);border-radius:6px;padding:1rem 1.2rem;margin-bottom:1.2rem">
+          <div style="color:var(--accent2);font-weight:700;margin-bottom:0.4rem;font-size:0.85rem">⚠️ Безопасность многоагентных систем</div>
+          <p style="color:var(--muted);font-size:0.88rem;line-height:1.6;margin:0">
+            Субагент не должен слепо доверять инструкциям от другого агента — тот мог быть скомпрометирован через prompt injection. <strong style="color:var(--text)">Принцип минимальных привилегий:</strong> каждый агент получает только те права, которые нужны для его задачи.
+          </p>
+        </div>
+
+        <div class="section-title">Динамические Resources</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:1.2rem">
+          MCP Resources позволяют Claude читать данные в реальном времени: текущее состояние БД, live-метрики, содержимое файлов. В отличие от Tools (действия), Resources — это <strong style="color:var(--text)">только чтение</strong>, что делает их безопаснее.
+        </p>
+
+        <div class="section-title">Масштабирование</div>
+        <ul class="topics-list">
+          <li>⚡ Stateless MCP-серверы легко масштабируются горизонтально</li>
+          <li>⚡ Используй очереди (Redis, SQS) для распределения задач между агентами</li>
+          <li>⚡ MCP Inspector помогает отлаживать сообщения между хостом и сервером</li>
+          <li>⚡ OAuth в MCP позволяет пользователям авторизовывать агента в их аккаунты</li>
+        </ul>
+      </div>
+    `,
     topics: [
       'Многоагентные архитектуры: оркестратор + субагенты',
       'Resources: динамические контекстные данные',
@@ -2279,12 +2837,13 @@ function openLevel(id) {
     </div>
 
     <div class="tab-pane active" id="tab-pane-topics">
+      ${lvl.theory ? lvl.theory : `
       <div class="topics-section">
         <div class="section-title">Что изучим</div>
         <ul class="topics-list">
           ${lvl.topics.map(t => `<li>${t}</li>`).join('')}
         </ul>
-      </div>
+      </div>`}
     </div>
 
     <div class="tab-pane" id="tab-pane-practice">
@@ -2489,20 +3048,14 @@ async function sendMessage(levelId) {
 
     let responseText = '';
 
-    // Try direct API first, then proxy
-    const endpoint = useProxy
-      ? 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.anthropic.com/v1/messages')
-      : 'https://api.anthropic.com/v1/messages';
-
+    // Запросы идут через наш Cloudflare Worker прокси /api/claude
     const headers = {
       'Content-Type': 'application/json',
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
     };
 
-    // CORS note: direct browser calls to Anthropic API are blocked.
-    // We'll do a direct fetch and handle CORS error gracefully.
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await fetch('/api/claude', {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -2534,10 +3087,8 @@ async function sendMessage(levelId) {
     const errMsg = document.createElement('div');
     errMsg.className = 'ws-msg system';
 
-    if (err.message.includes('Failed to fetch') || err.message.includes('CORS')) {
-      errMsg.innerHTML = `⚠️ CORS-ошибка: браузер блокирует прямые запросы к API.<br>
-        Решение: открой <strong>claude.ai</strong> и практикуйся там.<br>
-        <a onclick="copyPrompt(${currentLevel})" style="color:var(--accent);cursor:pointer">Скопировать стартовый промпт →</a>`;
+    if (err.message.includes('Failed to fetch') || err.message.includes('CORS') || err.message.includes('NetworkError')) {
+      errMsg.innerHTML = `⚠️ Сеть недоступна. Проверь подключение к интернету.`;
     } else {
       errMsg.textContent = `⚠️ Ошибка: ${err.message}`;
     }
